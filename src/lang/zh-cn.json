@@ -391,6 +391,7 @@
   "setting_wy_account": "网易云账号",
   "setting_wy_auto_daily_rec": "自动同步每日推荐",
   "setting_wy_auto_daily_rec_tip": "每天 6:00 后首次打开 App 时，自动更新到「网易云每日推荐」列表。",
+  "setting_wy_daily_list_name": "网易云每日推荐",
   "setting_wy_daily_rec": "立即刷新",
   "setting_wy_daily_rec_added": "已添加到试听列表，共",
   "setting_wy_daily_rec_empty": "今日推荐为空",

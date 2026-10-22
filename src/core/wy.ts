@@ -204,7 +204,7 @@ export const getDailyRecommendPlaylists = async() => {
 
 /** 每日推荐专属列表的固定 id，靠它实现幂等覆盖而不是每次新建列表 */
 export const WY_DAILY_LIST_ID = 'wy_daily_rec'
-const WY_DAILY_LIST_NAME = '网易云每日推荐'
+const getDailyListName = () => global.i18n.t('setting_wy_daily_list_name')
 
 /**
  * 网易云的日推在每天 06:00 换一批，不是 00:00。
@@ -246,14 +246,14 @@ export const syncDailyRecommend = async(force = false): Promise<number> => {
     if (exists) {
       await overwriteList({
         id: WY_DAILY_LIST_ID,
-        name: WY_DAILY_LIST_NAME,
+        name: getDailyListName(),
         locationUpdateTime: null,
         list,
       })
     } else {
       await createList({
         id: WY_DAILY_LIST_ID,
-        name: WY_DAILY_LIST_NAME,
+        name: getDailyListName(),
         list,
         position: 0,
       })

@@ -391,6 +391,7 @@
   "setting_wy_account": "網易雲帳號",
   "setting_wy_auto_daily_rec": "自動同步每日推薦",
   "setting_wy_auto_daily_rec_tip": "每天 6:00 後首次開啟 App 時，自動更新到「網易雲每日推薦」清單。",
+  "setting_wy_daily_list_name": "網易雲每日推薦",
   "setting_wy_daily_rec": "立即重新整理",
   "setting_wy_daily_rec_added": "已加入試聽清單，共",
   "setting_wy_daily_rec_empty": "今日推薦為空",

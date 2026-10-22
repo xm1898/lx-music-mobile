@@ -391,6 +391,7 @@
   "setting_wy_account": "NetEase Cloud account",
   "setting_wy_auto_daily_rec": "Auto-sync daily recommendation",
   "setting_wy_auto_daily_rec_tip": "Update the \"NetEase daily recommendation\" list automatically on the first launch after 6:00 each day.",
+  "setting_wy_daily_list_name": "NetEase daily recommendation",
   "setting_wy_daily_rec": "Refresh now",
   "setting_wy_daily_rec_added": "Added to temp list, total",
   "setting_wy_daily_rec_empty": "Today's recommendation is empty",
