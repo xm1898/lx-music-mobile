@@ -121,6 +121,20 @@ export class StateEvent extends Event {
   sourceNamesUpdated(names: CommonState['sourceNames']) {
     this.emit('sourceNamesUpdated', names)
   }
+
+  /**
+   * 网易云账号信息变更（登录/登出/信息刷新）
+   */
+  wyAccountChanged() {
+    this.emit('wyAccountChanged')
+  }
+
+  /**
+   * 网易云喜欢列表变更
+   */
+  wyLikedListChanged() {
+    this.emit('wyLikedListChanged')
+  }
 }
 
 

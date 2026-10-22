@@ -11,6 +11,7 @@ import settingState from '@/store/setting/state'
 import { requestMsg } from '@/utils/message'
 import BackgroundTimer from 'react-native-background-timer'
 import { apis } from '@/utils/musicSdk/api-source'
+import { getMusicUrl as getWyCookieMusicUrl } from '@/utils/musicSdk/wy/api-cookie'
 
 
 const getOtherSourcePromises = new Map()
@@ -264,7 +265,11 @@ export const getOnlineOtherSourceMusicUrl = async({ musicInfos, quality, onToggl
 
   let reqPromise
   try {
-    reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
+    if (musicInfo.source == 'wy' && settingState.setting['common.wyCookie']) {
+      reqPromise = getWyCookieMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
+    } else {
+      reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), itemQuality).promise
+    }
   } catch (err: any) {
     reqPromise = Promise.reject(err)
   }
@@ -301,7 +306,14 @@ export const handleGetOnlineMusicUrl = async({ musicInfo, quality, onToggleSourc
 
   let reqPromise
   try {
-    reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise
+    // 网易云内置平台只提供元数据，apis('wy') 里没有播放实现（apiList 全被注释），
+    // 直接调会抛 'Api is not found'。登录后用 cookie 直连拿地址，
+    // 拿不到（非 VIP / 无版权）再交给下面的换源逻辑。
+    if (musicInfo.source == 'wy' && settingState.setting['common.wyCookie']) {
+      reqPromise = getWyCookieMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise
+    } else {
+      reqPromise = musicSdk[musicInfo.source].getMusicUrl(toOldMusicInfo(musicInfo), targetQuality).promise
+    }
   } catch (err: any) {
     reqPromise = Promise.reject(err)
   }

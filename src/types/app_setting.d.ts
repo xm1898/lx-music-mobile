@@ -22,6 +22,11 @@ declare global {
       'common.apiSource': string
 
       /**
+       * 网易云音乐 Cookie，有值时启用 Cookie 直连播放与账号功能
+       */
+      'common.wyCookie': string
+
+      /**
        * 音源名称类型，原名、别名
        */
       'common.sourceNameType': 'alias' | 'real'

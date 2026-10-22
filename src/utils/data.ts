@@ -590,3 +590,18 @@ export const setUserApiAllowShowUpdateAlert = async(id: string, enable: boolean)
   targetApi.allowShowUpdateAlert = enable
   await saveData(userApiPrefix, userApis)
 }
+
+const wyAccountKey = storageDataPrefix.wyAccount
+
+export interface WyAccountCache {
+  uid: string
+  nickname: string
+  avatarUrl: string
+  vipType: number
+  /** 写入该缓存时 cookie 的指纹，cookie 变了缓存就作废 */
+  cookieTag: string
+}
+
+export const getWyAccountCache = async() => await getData<WyAccountCache>(wyAccountKey)
+export const saveWyAccountCache = async(info: WyAccountCache) => { await saveData(wyAccountKey, info) }
+export const clearWyAccountCache = async() => { await removeData(wyAccountKey) }

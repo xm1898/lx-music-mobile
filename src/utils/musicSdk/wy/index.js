@@ -1,5 +1,9 @@
 import leaderboard from './leaderboard'
 import { apis } from '../api-source'
+import settingState from '@/store/setting/state'
+import * as apiCookie from './api-cookie'
+import user from './user'
+import dailyRec from './dailyRec'
 import getLyric from './lyric'
 import getMusicInfo from './musicInfo'
 import musicSearch from './musicSearch'
@@ -15,7 +19,12 @@ const wy = {
   songList,
   hotSearch,
   comment,
+  user,
+  dailyRec,
   getMusicUrl(songInfo, type) {
+    // 登录后走 Cookie 直连拿 VIP 音质，失败时由上层换源逻辑兜底；
+    // 未登录保持原有行为，不影响任何现有用户
+    if (settingState.setting['common.wyCookie']) return apiCookie.getMusicUrl(songInfo, type)
     return apis('wy').getMusicUrl(songInfo, type)
   },
   getLyric(songInfo) {

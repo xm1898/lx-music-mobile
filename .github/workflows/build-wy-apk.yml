@@ -1,0 +1,93 @@
+name: Build APK (self-signed)
+
+# 专为 fork 设计：不依赖任何 Repository secrets。
+# 上游 release.yml 需要 KEYSTORE_* 系列 secrets，fork 里没有，直接跑会失败。
+# 这里用仓库自带的 android/app/debug.keystore 给 release 包签名，自用足够。
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - wy
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v4
+
+      - name: Setup Env
+        uses: ./.github/actions/setup
+
+      - name: Ensure Android SDK
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ -x "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+            "$SDKMANAGER" "platforms;android-36" "build-tools;35.0.0" > /dev/null 2>&1 || true
+          fi
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" || true
+
+      # app/build.gradle 的 signingConfigs.release 在没有 -P 参数时会读 android/keystore.properties
+      # 这里指向仓库内的 debug.keystore，从而让 assembleRelease 在没有 secrets 的情况下也能签名
+      - name: Prepare signing config
+        run: |
+          cat > android/keystore.properties <<'EOF'
+          storeFile=debug.keystore
+          storePassword=android
+          keyAlias=androiddebugkey
+          keyPassword=android
+          EOF
+          echo "keystore.properties written"
+
+      - name: Build release
+        id: rel
+        continue-on-error: true
+        env:
+          DISABLE_SVG: 1
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -PreactNativeArchitectures=arm64-v8a \
+            -x lint -x lintVitalRelease \
+            --stacktrace --no-daemon
+
+      # release 挂了也要给出一个能装的包，否则只能看日志干瞪眼
+      - name: Build debug (fallback)
+        if: steps.rel.outcome == 'failure'
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug \
+            -PreactNativeArchitectures=arm64-v8a \
+            -x lint --stacktrace --no-daemon
+
+      - name: List outputs
+        if: always()
+        run: |
+          echo "--- release ---"
+          ls -lh android/app/build/outputs/apk/release/ 2>/dev/null || echo "(none)"
+          echo "--- debug ---"
+          ls -lh android/app/build/outputs/apk/debug/ 2>/dev/null || echo "(none)"
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lx-music-wy-${{ github.run_number }}
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail if release build failed
+        if: steps.rel.outcome == 'failure'
+        run: |
+          echo "::error::release 构建失败，已回退到 debug 包，请查看上方 gradle 日志"
+          exit 1

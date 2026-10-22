@@ -18,6 +18,11 @@
 
 -keep public class com.dylanvann.fastimage.* {*;}
 -keep public class com.dylanvann.fastimage.** {*;}
+
+# 自定义原生模块：@ReactMethod 靠方法名反射调用，混淆后 JS 侧会找不到方法
+-keepclassmembers class cn.toside.music.mobile.cookie.** {
+  @com.facebook.react.bridge.ReactMethod <methods>;
+}
 -keep public class * implements com.bumptech.glide.module.GlideModule
 -keep public class * extends com.bumptech.glide.module.AppGlideModule
 -keep public enum com.bumptech.glide.load.ImageHeaderParser$** {

@@ -4,6 +4,7 @@ import BackgroundTimer from 'react-native-background-timer'
 import { requestMsg } from './message'
 import { bHh } from './musicSdk/options'
 import { deflateRaw } from 'pako'
+import settingState from '@/store/setting/state'
 
 const defaultHeaders = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
@@ -107,6 +108,12 @@ const handleRequestData = async(url, {
   headers = Object.assign({
     Accept: 'application/json',
   }, headers)
+  // 网易云接口按登录态返回数据（音质、歌单、日推），已登录时统一带上 Cookie，
+  // 否则 VIP 用户看到的歌曲音质仍然只有 128k
+  if (!headers.cookie && url.indexOf('music.163.com') > -1) {
+    const cookie = settingState.setting['common.wyCookie']
+    if (cookie) headers.cookie = cookie
+  }
   options.cache = cache
   if (method.toLocaleLowerCase() === 'post' && !headers['Content-Type']) {
     if (options.form) {

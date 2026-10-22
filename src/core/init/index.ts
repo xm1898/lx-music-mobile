@@ -14,6 +14,7 @@ import settingState from '@/store/setting/state'
 import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
 import { cheatTip } from '@/utils/tools'
+import { initWy } from '@/core/wy'
 
 let isFirstPush = true
 const handlePushedHomeScreen = async() => {
@@ -62,6 +63,10 @@ export default async() => {
 
   void initSync(setting)
   bootLog('Sync inited.')
+
+  // 网易云账号：有 cookie 时后台校验并刷新信息，不阻塞启动
+  void initWy()
+  bootLog('Wy account inited.')
 
   // syncSetting()
 

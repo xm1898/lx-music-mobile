@@ -9,6 +9,7 @@ import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import { onScreenStateChange } from '@/utils/nativeModules/utils'
 import { AppState } from 'react-native'
+import { handleScrobble } from '@/core/wy'
 
 const delaySavePlayInfo = throttleBackgroundTimer(() => {
   void savePlayInfo({
@@ -32,6 +33,12 @@ export default () => {
       if (!position || id != playerState.musicInfo.id) return
       setNowPlayTime(position)
       if (!playerState.isPlay) return
+
+      // 网易云打点：日推质量依赖它，只在播放满 2 分钟或过半时上报
+      const musicInfo = playerState.playMusicInfo.musicInfo
+      if (musicInfo && 'source' in musicInfo && musicInfo.source == 'wy') {
+        handleScrobble(musicInfo as unknown as LX.Music.MusicInfoOnline, position, playerState.progress.maxPlayTime)
+      }
 
       if (settingState.setting['player.isSavePlayTime'] && !playerState.playMusicInfo.isTempPlay && isScreenOn) {
         delaySavePlayInfo()
