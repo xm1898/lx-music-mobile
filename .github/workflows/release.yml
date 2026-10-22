@@ -1,9 +1,10 @@
 name: Build
 
+# 原上游配置是 push master 自动触发，但它依赖 KEYSTORE_* 系列 Repository secrets，
+# fork 里没有这些 secrets，每次 push 都会挂一个红叉。
+# 改为手动触发：等配好 secrets 后再点 Run workflow。
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 jobs:
   Android:
