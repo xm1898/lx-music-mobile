@@ -153,3 +153,18 @@ git clean -fd src/store/wy src/utils/musicSdk/wy/user.js src/utils/musicSdk/wy/d
 ```
 
 `react-native-webview` 可以留着，不影响原逻辑。
+
+---
+
+## 七、关于 git 历史
+
+`github.com` 主域在这台机器上连不通（`api.github.com` 和 `codeload` 正常），`git push` 走不了。
+所以这些提交是**通过 GitHub Git Data API 重建后推上去的**，文件内容与本地**逐字节一致**（blob sha 相同），但 commit sha 与本地不同，本地历史与远程是分叉的。
+
+不影响代码，但下次要用命令行 push 之前先对齐一次：
+
+```bash
+git fetch origin && git reset --hard origin/master
+```
+
+对齐后本地和远程就完全一致了。

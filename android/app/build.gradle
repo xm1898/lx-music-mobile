@@ -121,7 +121,8 @@ android {
         abi {
             reset()
             enable enableSeparateBuildPerCPUArchitecture
-            universalApk true  // If true, also generate a universal APK
+            // 默认 true（保持上游行为）；CI 里传 -PuniversalApk=false 就只出分架构包，不再额外打 universal
+            universalApk !project.hasProperty('universalApk') || project.property('universalApk').toBoolean()
             include (*reactNativeArchitectures())
         }
     }
