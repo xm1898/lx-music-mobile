@@ -1,25 +1,44 @@
-import { memo, useCallback, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
 import Button from '../../components/Button'
+import CheckBoxItem from '../../components/CheckBoxItem'
 import Text from '@/components/common/Text'
 import Image from '@/components/common/Image'
 import { useTheme } from '@/store/theme/hook'
+import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
 import { createStyle, toast } from '@/utils/tools'
+import { updateSetting } from '@/core/common'
 import { useWyAccount } from '@/store/wy/hook'
-import { getDailyRecommendList, logoutWy } from '@/core/wy'
-import { addListMusics } from '@/core/list'
-import { LIST_IDS } from '@/config/constant'
+import { getDailyRecSyncStatus, logoutWy, syncDailyRecommend } from '@/core/wy'
 import WebLoginModal, { type WebLoginModalType } from '@/components/WebLoginModal'
 
 export default memo(() => {
   const t = useI18n()
   const theme = useTheme()
   const account = useWyAccount()
+  const autoDailyRec = useSettingValue('common.wyAutoDailyRec')
   const modalRef = useRef<WebLoginModalType>(null)
   const [syncing, setSyncing] = useState(false)
+  const [synced, setSynced] = useState(false)
+  const [syncedCount, setSyncedCount] = useState(0)
+
+  const refreshStatus = useCallback(async() => {
+    const status = await getDailyRecSyncStatus()
+    setSynced(status.synced)
+    setSyncedCount(status.count)
+  }, [])
+
+  useEffect(() => {
+    if (!account) {
+      setSynced(false)
+      setSyncedCount(0)
+      return
+    }
+    void refreshStatus()
+  }, [account, refreshStatus])
 
   const handleLogin = useCallback(() => {
     modalRef.current?.show()
@@ -29,19 +48,30 @@ export default memo(() => {
     void logoutWy()
   }, [])
 
+  const handleToggleAuto = useCallback((check: boolean) => {
+    updateSetting({ 'common.wyAutoDailyRec': check })
+    // 刚打开开关时立刻补一次，否则用户要等到明天才看到效果
+    if (check) {
+      void syncDailyRecommend().then(count => {
+        if (count > 0) void refreshStatus()
+      }).catch(() => {})
+    }
+  }, [refreshStatus])
+
   const handleDailyRec = useCallback(async() => {
     if (syncing) return
     setSyncing(true)
     try {
-      const list = await getDailyRecommendList()
-      if (!list.length) {
-        toast(t('setting_wy_daily_rec_empty'))
+      const count = await syncDailyRecommend(true)
+      if (count < 0) {
+        toast(t('setting_wy_need_login'))
         return
       }
-      await addListMusics(LIST_IDS.DEFAULT, list, 'top')
-      toast(`${t('setting_wy_daily_rec_added')} ${list.length}`)
+      setSynced(true)
+      setSyncedCount(count)
+      toast(`${t('setting_wy_daily_rec_added')} ${count}`)
     } catch (err: any) {
-      toast(err.message || t('setting_wy_daily_rec_failed'))
+      toast(err.message == 'empty' ? t('setting_wy_daily_rec_empty') : (err.message || t('setting_wy_daily_rec_failed')))
     } finally {
       setSyncing(false)
     }
@@ -68,6 +98,21 @@ export default memo(() => {
               )
         }
       </View>
+      {
+        account
+          ? (
+            <View style={styles.statusRow}>
+              <Text size={12} color={theme['c-500']}>
+                {
+                  synced
+                    ? `${t('setting_wy_daily_rec_synced')} · ${syncedCount}`
+                    : t('setting_wy_daily_rec_never')
+                }
+              </Text>
+            </View>
+            )
+          : null
+      }
       <View style={styles.btnRow}>
         {
           account
@@ -80,6 +125,22 @@ export default memo(() => {
             : <Button onPress={handleLogin}>{t('setting_wy_login')}</Button>
         }
       </View>
+      {
+        account
+          ? (
+            <View style={styles.checkRow}>
+              <CheckBoxItem
+                check={autoDailyRec}
+                label={t('setting_wy_auto_daily_rec')}
+                onChange={handleToggleAuto}
+              />
+              <Text size={12} color={theme['c-500']} style={styles.checkTip}>
+                {t('setting_wy_auto_daily_rec_tip')}
+              </Text>
+            </View>
+            )
+          : null
+      }
       <WebLoginModal ref={modalRef} />
     </SubTitle>
   )
@@ -106,10 +167,22 @@ const styles = createStyle({
     flexShrink: 1,
     lineHeight: 18,
   },
+  statusRow: {
+    marginTop: 6,
+    paddingLeft: 0,
+  },
   btnRow: {
     flexDirection: 'row',
     marginTop: 10,
     flexWrap: 'wrap',
     rowGap: 8,
+  },
+  checkRow: {
+    marginTop: 6,
+  },
+  checkTip: {
+    paddingLeft: 25,
+    paddingRight: 20,
+    lineHeight: 17,
   },
 })

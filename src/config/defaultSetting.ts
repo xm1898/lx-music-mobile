@@ -4,6 +4,7 @@ const defaultSetting: LX.AppSetting = {
   'common.langId': null,
   'common.apiSource': '',
   'common.wyCookie': '',
+  'common.wyAutoDailyRec': true,
   'common.sourceNameType': 'alias',
   'common.shareType': 'system',
   'common.isAgreePact': false,

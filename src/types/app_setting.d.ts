@@ -27,6 +27,11 @@ declare global {
       'common.wyCookie': string
 
       /**
+       * 每日推荐自动同步到专属列表，每天首次启动或回到前台时拉一次
+       */
+      'common.wyAutoDailyRec': boolean
+
+      /**
        * 音源名称类型，原名、别名
        */
       'common.sourceNameType': 'alias' | 'real'

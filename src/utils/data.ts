@@ -605,3 +605,18 @@ export interface WyAccountCache {
 export const getWyAccountCache = async() => await getData<WyAccountCache>(wyAccountKey)
 export const saveWyAccountCache = async(info: WyAccountCache) => { await saveData(wyAccountKey, info) }
 export const clearWyAccountCache = async() => { await removeData(wyAccountKey) }
+
+const wyDailyRecKey = storageDataPrefix.wyDailyRec
+
+export interface WyDailyRecCache {
+  /** 已同步的日推批次标识，按网易云 6:00 换批计算 */
+  dateKey: string
+  /** 该批次写入的歌曲数量 */
+  count: number
+  /** 同步时的 uid，换账号后要重拉 */
+  uid: string
+}
+
+export const getWyDailyRecCache = async() => await getData<WyDailyRecCache>(wyDailyRecKey)
+export const saveWyDailyRecCache = async(info: WyDailyRecCache) => { await saveData(wyDailyRecKey, info) }
+export const clearWyDailyRecCache = async() => { await removeData(wyDailyRecKey) }

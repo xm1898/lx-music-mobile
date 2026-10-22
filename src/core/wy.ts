@@ -1,14 +1,24 @@
 import { updateSetting } from '@/core/common'
+import { createList, overwriteList } from '@/core/list'
 import settingState from '@/store/setting/state'
+import listState from '@/store/list/state'
 import wyState from '@/store/wy/state'
 import { addLikedSong, removeLikedSong, resetLikedList, setAccount, setLikedSongIds } from '@/store/wy/action'
 import wyApi, { isLoginCookie } from '@/utils/musicSdk/wy/user'
 import dailyRecApi from '@/utils/musicSdk/wy/dailyRec'
-import { clearWyAccountCache, getWyAccountCache, saveWyAccountCache } from '@/utils/data'
+import {
+  clearWyAccountCache,
+  clearWyDailyRecCache,
+  getWyAccountCache,
+  getWyDailyRecCache,
+  saveWyAccountCache,
+  saveWyDailyRecCache,
+} from '@/utils/data'
 import { clearWebviewCookie } from '@/utils/nativeModules/cookieReader'
 import { toast } from '@/utils/tools'
 import { toNewMusicInfo } from '@/utils'
 import { log as writeLog } from '@/utils/log'
+import { AppState } from 'react-native'
 
 const getCookie = () => settingState.setting['common.wyCookie']
 
@@ -84,6 +94,10 @@ export const loginWy = async(cookie: string, silent = false) => {
   ensureWyQuality()
   if (!silent) toast(global.i18n.t('setting_wy_login_success'))
   void syncLikedList()
+  // 刚登录，日推缓存必然不属于这个账号，直接拉一次
+  void syncDailyRecommend().catch(err => {
+    writeLog.warn('[wy] daily rec after login failed', err.message)
+  })
   return account
 }
 
@@ -93,6 +107,8 @@ export const logoutWy = async() => {
   resetLikedList()
   removeWyQuality()
   await clearWyAccountCache()
+  // 日推列表本身保留（用户可能想继续听），只清批次标记，换账号后能重拉
+  await clearWyDailyRecCache()
   // 不清 WebView 的 cookie，下次点登录会直接是已登录状态
   void clearWebviewCookie()
 }
@@ -106,6 +122,8 @@ export const initWy = async() => {
   if (!eventBinded) {
     eventBinded = true
     global.state_event.on('apiSourceUpdated', () => { ensureWyQuality() })
+    // 常驻后台跨过 6 点的情况，靠回前台时补一次
+    AppState.addEventListener('change', handleAppStateChange)
   }
 
   const cookie = getCookie()
@@ -131,6 +149,7 @@ export const initWy = async() => {
     await fetchAccount(cookie)
     ensureWyQuality()
     void syncLikedList()
+    autoSyncDailyRec()
   } catch (err: any) {
     writeLog.warn('[wy] init failed', err.message)
     // 只有明确判定登录失效才清 cookie，网络错误保留登录态
@@ -181,6 +200,102 @@ export const getDailyRecommendPlaylists = async() => {
   const cookie = getCookie()
   if (!cookie) throw new Error('not_login')
   return dailyRecApi.getRecPlaylists(cookie)
+}
+
+/** 每日推荐专属列表的固定 id，靠它实现幂等覆盖而不是每次新建列表 */
+export const WY_DAILY_LIST_ID = 'wy_daily_rec'
+const WY_DAILY_LIST_NAME = '网易云每日推荐'
+
+/**
+ * 网易云的日推在每天 06:00 换一批，不是 00:00。
+ * 所以「今天」的边界要往前推 6 小时，否则 0 点到 6 点之间拉到的还是昨天那批。
+ */
+const DAILY_REC_RESET_HOUR = 6
+const getDailyRecDateKey = () => {
+  const d = new Date(Date.now() - DAILY_REC_RESET_HOUR * 3600000)
+  const pad = (n: number) => n < 10 ? `0${n}` : String(n)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+let syncingDailyRec: Promise<number> | null = null
+
+/**
+ * 把当日推荐同步到专属列表。
+ * 同一天重复调用直接跳过；歌曲整体覆盖，不做增量，避免列表越滚越长。
+ * @param force 忽略「今天已同步」的判断，强制重拉
+ * @returns 写入的歌曲数；跳过或未登录返回 -1
+ */
+export const syncDailyRecommend = async(force = false): Promise<number> => {
+  const cookie = getCookie()
+  const account = wyState.account
+  if (!cookie || !account) return -1
+  // 并发调用（启动 + 回前台）共用同一次请求
+  if (syncingDailyRec) return syncingDailyRec
+
+  const dateKey = getDailyRecDateKey()
+  if (!force) {
+    const cache = await getWyDailyRecCache()
+    if (cache && cache.dateKey === dateKey && cache.uid === account.uid) return -1
+  }
+
+  syncingDailyRec = (async() => {
+    const list = await getDailyRecommendList()
+    if (!list.length) throw new Error('empty')
+
+    const exists = listState.userList.some(l => l.id === WY_DAILY_LIST_ID)
+    if (exists) {
+      await overwriteList({
+        id: WY_DAILY_LIST_ID,
+        name: WY_DAILY_LIST_NAME,
+        locationUpdateTime: null,
+        list,
+      })
+    } else {
+      await createList({
+        id: WY_DAILY_LIST_ID,
+        name: WY_DAILY_LIST_NAME,
+        list,
+        position: 0,
+      })
+    }
+
+    await saveWyDailyRecCache({ dateKey, count: list.length, uid: account.uid })
+    writeLog.info('[wy] daily rec synced', dateKey, list.length)
+    return list.length
+  })()
+
+  try {
+    return await syncingDailyRec
+  } finally {
+    syncingDailyRec = null
+  }
+}
+
+/** 供设置页显示「今日已同步 / 尚未同步」 */
+export const getDailyRecSyncStatus = async() => {
+  const account = wyState.account
+  const cache = await getWyDailyRecCache()
+  if (!cache || !account || cache.uid !== account.uid) return { synced: false, count: 0 }
+  return { synced: cache.dateKey === getDailyRecDateKey(), count: cache.count }
+}
+
+/** 自动同步的静默版本，失败只写日志，不打扰用户 */const autoSyncDailyRec = () => {
+  if (!settingState.setting['common.wyAutoDailyRec']) return
+  void syncDailyRecommend().catch(err => {
+    // 未登录、当天已同步、网络失败都很常见，不弹提示
+    writeLog.warn('[wy] auto daily rec skipped', err.message)
+  })
+}
+
+// 回到前台时补一次检查：App 常驻后台跨过 6 点的情况靠这里兜住
+let lastResumeCheck = 0
+const RESUME_CHECK_INTERVAL = 5 * 60 * 1000
+const handleAppStateChange = (state: string) => {
+  if (state != 'active') return
+  const now = Date.now()
+  if (now - lastResumeCheck < RESUME_CHECK_INTERVAL) return
+  lastResumeCheck = now
+  autoSyncDailyRec()
 }
 
 /** 相似歌曲 */

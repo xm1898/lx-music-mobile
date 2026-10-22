@@ -80,6 +80,7 @@ export const storageDataPrefix = {
   userApi: '@user_api__',
 
   wyAccount: '@wy_account',
+  wyDailyRec: '@wy_daily_rec',
 } as const
 
 // v0.x.x 版本的 data keys
