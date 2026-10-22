@@ -18,6 +18,9 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    # 要往 Release 上传 APK 资产，需要写权限
+    permissions:
+      contents: write
     steps:
       - name: Check out git repository
         uses: actions/checkout@v4
@@ -92,6 +95,36 @@ jobs:
             android/app/build/outputs/apk/debug/*arm64-v8a.apk
           if-no-files-found: warn
           retention-days: 30
+
+      # GitHub Actions 的 artifact 永远是 zip，想要「点一下就下 apk」只能走 Release 资产。
+      # 这里固定用 wy-latest 这个 tag，每次构建覆盖同名资产，链接永久不变。
+      - name: Publish APK to Release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          APK=$(ls android/app/build/outputs/apk/release/*arm64-v8a.apk 2>/dev/null | head -1)
+          [ -n "$APK" ] || APK=$(ls android/app/build/outputs/apk/debug/*arm64-v8a.apk 2>/dev/null | head -1)
+          if [ -z "$APK" ]; then
+            echo "::error::没找到 APK，跳过 Release 上传"
+            exit 0
+          fi
+          echo "uploading: $APK"
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="wy-latest"
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "WY 自动构建（arm64-v8a）" \
+              --notes "每次 push 到 master 自动更新，资产同名覆盖，链接永久有效。" \
+              --latest=false
+          fi
+          # 版本号变了文件名也会变，先把旧的 apk 资产清掉，保证 Release 里只有一个 apk
+          gh release view "$TAG" --json assets -q '.assets[].name' 2>/dev/null | while read -r n; do
+            case "$n" in *.apk) gh release delete-asset "$TAG" "$n" -y || true ;; esac
+          done
+          gh release upload "$TAG" "$APK" --clobber
+          echo "下载地址: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$(basename "$APK")"
 
       - name: Fail if release build failed
         if: steps.rel.outcome == 'failure'
