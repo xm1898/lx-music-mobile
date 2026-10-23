@@ -3,7 +3,6 @@ import { useCallback } from 'react'
 import Btn from './Btn'
 import { usePlayMusicInfo } from '@/store/player/hook'
 import { useIsWyLiked, useWyAccount } from '@/store/wy/hook'
-import { useTheme } from '@/store/theme/hook'
 import { toggleLike } from '@/core/wy'
 import { toast } from '@/utils/tools'
 
@@ -17,8 +16,16 @@ const getSongId = (musicInfo: LX.Player.PlayMusic | null) => {
   return String(meta?.songId ?? info.id.replace(/^wy_/, ''))
 }
 
+/**
+ * 红心固定用经典红，不跟随主题色（默认主题是绿色，点了看不出来）。
+ * love glyph 在 1024 em 里高 1043、宽 1164（还溢出），比邻居图标大一圈，
+ * 渲染时缩到 18（22 × 860/1043）与旁边按钮视觉齐平。
+ */
+const LIKE_COLOR = '#ff4d4d'
+const LIKE_BG_COLOR = 'rgba(255, 77, 77, 0.16)'
+const LIKE_ICON_SIZE = 18
+
 export default () => {
-  const theme = useTheme()
   const account = useWyAccount()
   // usePlayMusicInfo 返回 { listId, musicInfo, isTempPlay }，歌曲信息在 .musicInfo 上
   const songId = getSongId(usePlayMusicInfo().musicInfo)
@@ -39,7 +46,9 @@ export default () => {
   return (
     <Btn
       icon="love"
-      color={isLiked ? theme['c-primary-font'] : undefined}
+      color={isLiked ? LIKE_COLOR : undefined}
+      bgColor={isLiked ? LIKE_BG_COLOR : undefined}
+      iconSize={LIKE_ICON_SIZE}
       onPress={handlePress}
     />
   )
