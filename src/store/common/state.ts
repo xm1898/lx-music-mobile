@@ -17,8 +17,9 @@ const state: InitState = {
   fontSize: global.lx.fontSize,
   statusbarHeight: 0,
   componentIds: {},
-  navActiveId: 'nav_search',
-  lastNavActiveId: 'nav_search',
+  // 启动默认落在「我的音乐库」（网易云账号页），未登录时该页会提示去登录
+  navActiveId: 'nav_wy_library',
+  lastNavActiveId: 'nav_wy_library',
   sourceNames: initData as InitState['sourceNames'],
   bgPic: null,
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react'
 import { View } from 'react-native'
+import WyLibrary from '../Views/WyLibrary'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -17,6 +18,41 @@ const hideKeys = [
   'theme.fontShadow',
 ] as Readonly<Array<keyof LX.AppSetting>>
 
+const WyLibraryPage = () => {
+  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_wy_library')
+  const component = useMemo(() => <WyLibrary />, [])
+  useEffect(() => {
+    let currentId: CommonState['navActiveId'] = commonState.navActiveId
+    const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
+      currentId = id
+      if (id == 'nav_wy_library') {
+        requestAnimationFrame(() => {
+          setVisible(true)
+        })
+      }
+    }
+    const handleHide = () => {
+      if (currentId != 'nav_setting') return
+      setVisible(false)
+    }
+    const handleConfigUpdated = (keys: Array<keyof LX.AppSetting>) => {
+      if (keys.some(k => hideKeys.includes(k))) handleHide()
+    }
+    global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
+    global.state_event.on('themeUpdated', handleHide)
+    global.state_event.on('languageChanged', handleHide)
+    global.state_event.on('configUpdated', handleConfigUpdated)
+
+    return () => {
+      global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
+      global.state_event.off('themeUpdated', handleHide)
+      global.state_event.off('languageChanged', handleHide)
+      global.state_event.off('configUpdated', handleConfigUpdated)
+    }
+  }, [])
+
+  return visible ? component : null
+}
 const SearchPage = () => {
   const [visible, setVisible] = useState(commonState.navActiveId == 'nav_search')
   const component = useMemo(() => <Search />, [])
@@ -179,13 +215,15 @@ const SettingPage = () => {
 }
 
 const viewMap = {
-  nav_search: 0,
-  nav_songlist: 1,
-  nav_top: 2,
-  nav_love: 3,
-  nav_setting: 4,
+  nav_wy_library: 0,
+  nav_search: 1,
+  nav_songlist: 2,
+  nav_top: 3,
+  nav_love: 4,
+  nav_setting: 5,
 }
 const indexMap = [
+  'nav_wy_library',
   'nav_search',
   'nav_songlist',
   'nav_top',
@@ -274,6 +312,9 @@ const Main = () => {
       scrollEnabled={settingState.setting['common.homePageScroll']}
       style={styles.pagerView}
     >
+      <View collapsable={false} key="nav_wy_library" style={styles.pageStyle}>
+        <WyLibraryPage />
+      </View>
       <View collapsable={false} key="nav_search" style={styles.pageStyle}>
         <SearchPage />
       </View>

@@ -26,7 +26,6 @@ export enum COMPONENT_IDS {
   songlistDetail = 'songlistDetail',
   comment = 'comment',
   wyDetail = 'wyDetail',
-  wyLibrary = 'wyLibrary',
   wyHistory = 'wyHistory',
 }
 
@@ -106,6 +105,7 @@ export const APP_PROVIDER_NAME = 'cn.toside.music.mobile.provider'
 
 
 export const NAV_MENUS = [
+  { id: 'nav_wy_library', icon: 'add-music' },
   { id: 'nav_search', icon: 'search-2' },
   { id: 'nav_songlist', icon: 'album' },
   { id: 'nav_top', icon: 'leaderboard' },

@@ -10,7 +10,7 @@ import { useTheme } from '@/store/theme/hook'
 import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
 import { createStyle, toast } from '@/utils/tools'
-import { updateSetting } from '@/core/common'
+import { setNavActiveId, updateSetting } from '@/core/common'
 import { useWyAccount } from '@/store/wy/hook'
 import { getDailyRecSyncStatus, logoutWy, syncDailyRecommend } from '@/core/wy'
 import { navigations } from '@/navigation'
@@ -80,7 +80,8 @@ export default memo(() => {
   }, [syncing, t])
 
   const handleOpenLibrary = useCallback(() => {
-    navigations.pushWyLibraryScreen(commonState.componentIds.home!)
+    // 音乐库是 Home 的一个页面，切页即可（不再是推送屏）
+    setNavActiveId('nav_wy_library')
   }, [])
 
   const handleOpenHistory = useCallback(() => {

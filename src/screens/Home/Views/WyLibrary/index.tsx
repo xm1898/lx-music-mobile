@@ -1,20 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollView, TouchableOpacity, View, RefreshControl } from 'react-native'
 
-import StatusBar from '@/components/common/StatusBar'
-import PageContent from '@/components/PageContent'
-import PlayerBar from '@/components/player/PlayerBar'
 import Image from '@/components/common/Image'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle, toast } from '@/utils/tools'
-import { navigations, pop } from '@/navigation'
+import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
-import { useStatusbarHeight } from '@/store/common/hook'
-import { useWindowSize } from '@/utils/hooks'
-import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
+import { setNavActiveId } from '@/core/common'
 import { useWyAccount } from '@/store/wy/hook'
 import {
   getCollectedAlbums,
@@ -28,16 +23,20 @@ import {
 } from '@/core/wy'
 import { setTempList } from '@/core/list'
 import { playList } from '@/core/player/player'
-import { HEADER_HEIGHT as _HEADER_HEIGHT, LIST_IDS } from '@/config/constant'
+import { LIST_IDS } from '@/config/constant'
+import { scaleSizeW } from '@/utils/pixelRatio'
+import { useWindowSize } from '@/utils/hooks'
 
-const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 const GRID_GAP = scaleSizeW(10)
 
-export default ({ componentId }: { componentId: string }) => {
+/**
+ * Home 的一个页面（和歌单/排行榜平级），从侧边栏进入。
+ * 注意：头部（汉堡+标题）、PlayerBar 由 Home 统一提供，这里只渲染内容。
+ */
+export default () => {
   const theme = useTheme()
   const t = useI18n()
   const account = useWyAccount()
-  const statusBarHeight = useStatusbarHeight()
   const windowSize = useWindowSize()
   const isUnmountedRef = useRef(false)
 
@@ -96,21 +95,27 @@ export default ({ componentId }: { componentId: string }) => {
     void load(true)
   }, [load])
 
-  const handleBack = useCallback(() => {
-    void pop(commonState.componentIds.wyLibrary!)
+  const handleOpenStats = useCallback(() => {
+    const homeId = commonState.componentIds.home
+    if (homeId) navigations.pushWyHistoryScreen(homeId)
+  }, [])
+
+  const handleLogin = useCallback(() => {
+    // 未登录时一键去设置页登录（音乐库是启动落地页，必须给出路）
+    setNavActiveId('nav_setting')
   }, [])
 
   const openPlaylist = useCallback((item: WyPlaylistItem) => {
-    navigations.pushWyDetailScreen(componentId, { type: 'playlist', id: item.id, name: item.name, picUrl: item.picUrl })
-  }, [componentId])
+    navigations.pushWyDetailScreen(commonState.componentIds.home!, { type: 'playlist', id: item.id, name: item.name, picUrl: item.picUrl })
+  }, [])
 
   const openArtist = useCallback((item: WyArtistItem) => {
-    navigations.pushWyDetailScreen(componentId, { type: 'artist', id: item.id, name: item.name, picUrl: item.picUrl })
-  }, [componentId])
+    navigations.pushWyDetailScreen(commonState.componentIds.home!, { type: 'artist', id: item.id, name: item.name, picUrl: item.picUrl })
+  }, [])
 
   const openAlbum = useCallback((item: WyAlbumItem) => {
-    navigations.pushWyDetailScreen(componentId, { type: 'album', id: item.id, name: item.name, picUrl: item.picUrl })
-  }, [componentId])
+    navigations.pushWyDetailScreen(commonState.componentIds.home!, { type: 'album', id: item.id, name: item.name, picUrl: item.picUrl })
+  }, [])
 
   const handleHeartMode = useCallback(async() => {
     if (heartModeLoading) return
@@ -172,6 +177,9 @@ export default ({ componentId }: { componentId: string }) => {
           <Icon name="logo" size={40} color={theme['c-350']} />
           <Text color={theme['c-500']} style={styles.emptyText}>{t('setting_wy_need_login')}</Text>
           <Text size={11} color={theme['c-500']} style={styles.emptyText}>{t('setting_wy_login_tip')}</Text>
+          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} activeOpacity={0.8}>
+            <Text size={13} color={theme['c-primary-font']}>{t('setting_wy_login')}</Text>
+          </TouchableOpacity>
         </View>
       )
     }
@@ -191,6 +199,12 @@ export default ({ componentId }: { componentId: string }) => {
             <Text size={11} color={theme['c-500']}>{t('wy_heart_mode_tip')}</Text>
           </View>
           <Icon name="chevron-right" size={18} color={theme['c-primary-font']} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.statsRow} onPress={handleOpenStats} activeOpacity={0.7}>
+          <Icon name="leaderboard" size={17} color={theme['c-font']} />
+          <Text size={13} style={styles.statsText}>{t('wy_history_title')}</Text>
+          <Icon name="chevron-right" size={16} color={theme['c-500']} />
         </TouchableOpacity>
 
         {myPlaylists.length ? (
@@ -229,58 +243,21 @@ export default ({ componentId }: { componentId: string }) => {
         ) : null}
       </>
     )
-  }, [account, loading, myPlaylists, recPlaylists, artists, albums, theme, t, handleHeartMode, renderPlaylistGrid, renderAlbumGrid, openArtist])
+  }, [account, loading, myPlaylists, recPlaylists, artists, albums, theme, t, handleHeartMode, handleLogin, handleOpenStats, renderPlaylistGrid, renderAlbumGrid, openArtist])
 
   return (
-    <PageContent>
-      <StatusBar />
-      <View style={{ ...styles.header, paddingTop: statusBarHeight, borderBottomColor: theme['c-border-background'] }}>
-        <StatusBar />
-        <View style={styles.navBar}>
-          <TouchableOpacity onPress={handleBack} style={{ ...styles.button, width: HEADER_HEIGHT }}>
-            <Icon name="chevron-left" size={18} color={theme['c-font']} />
-          </TouchableOpacity>
-          <Text size={16} style={styles.headerTitle}>{t('wy_lib_title')}</Text>
-          <TouchableOpacity onPress={() => { navigations.pushWyHistoryScreen(componentId) }} style={{ ...styles.button, width: HEADER_HEIGHT }}>
-            <Icon name="leaderboard" size={17} color={theme['c-font']} />
-          </TouchableOpacity>
-        </View>
+    <ScrollView
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme['c-primary']]} progressBackgroundColor={theme['c-primary-background']} />}
+    >
+      <View style={styles.body}>
+        {content}
+        <View style={{ height: 60 }} />
       </View>
-      <ScrollView
-        style={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme['c-primary']]} progressBackgroundColor={theme['c-primary-background']} />}
-      >
-        <View style={styles.body}>
-          {content}
-          <View style={{ height: 60 }} />
-        </View>
-      </ScrollView>
-      <PlayerBar />
-    </PageContent>
+    </ScrollView>
   )
 }
 
 const styles = createStyle({
-  header: {
-    borderBottomWidth: 0.5,
-  },
-  navBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: HEADER_HEIGHT,
-  },
-  button: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    flexGrow: 1,
-    flexShrink: 1,
-    textAlign: 'center',
-  },
-  scroll: {
-    flex: 1,
-  },
   body: {
     padding: GRID_GAP,
   },
@@ -295,6 +272,26 @@ const styles = createStyle({
     flexGrow: 1,
     flexShrink: 1,
     paddingLeft: 10,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  statsText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    paddingLeft: 10,
+  },
+  loginBtn: {
+    marginTop: 16,
+    paddingLeft: 18,
+    paddingRight: 18,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(127, 127, 127, 0.15)',
   },
   sectionTitle: {
     paddingTop: 14,

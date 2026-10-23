@@ -7,7 +7,6 @@ import {
   SONGLIST_DETAIL_SCREEN,
   COMMENT_SCREEN,
   WY_DETAIL_SCREEN,
-  WY_LIBRARY_SCREEN,
   WY_HISTORY_SCREEN,
   // SETTING_SCREEN,
 } from './screenNames'
@@ -441,17 +440,6 @@ export function pushWyDetailScreen(componentId: string, info: WyDetailInfo) {
       component: {
         name: WY_DETAIL_SCREEN,
         passProps: { info },
-        options: wyScreenPushOptions(),
-      },
-    })
-  })
-}
-
-export function pushWyLibraryScreen(componentId: string) {
-  requestAnimationFrame(() => {
-    void Navigation.push(componentId, {
-      component: {
-        name: WY_LIBRARY_SCREEN,
         options: wyScreenPushOptions(),
       },
     })

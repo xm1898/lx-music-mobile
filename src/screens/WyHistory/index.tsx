@@ -12,8 +12,9 @@ import { createStyle, confirmDialog, toast } from '@/utils/tools'
 import { pop } from '@/navigation'
 import commonState from '@/store/common/state'
 import { useStatusbarHeight } from '@/store/common/hook'
-import { HEADER_HEIGHT as _HEADER_HEIGHT } from '@/config/constant'
+import { COMPONENT_IDS, HEADER_HEIGHT as _HEADER_HEIGHT } from '@/config/constant'
 import { scaleSizeH } from '@/utils/pixelRatio'
+import { setComponentId } from '@/core/common'
 import { clearWyPlayHistory, getWyPlayHistory, getWyPlayStats, type WyPlayHistoryItem, type WyPlayStats } from '@/core/wyHistory'
 import { handlePlay } from '@/components/OnlineList/listAction'
 
@@ -43,10 +44,15 @@ export default ({ componentId }: { componentId: string }) => {
   const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
+    // 必须注册 componentId：Home 抽屉的宽度修复靠 componentIds 回到 {home} 触发，
+    // 不注册的话从这个屏返回后侧边栏只能拉出灰色遮罩、打不开
+    setComponentId(COMPONENT_IDS.wyHistory, componentId)
+
     isUnmountedRef.current = false
     return () => {
       isUnmountedRef.current = true
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const load = useCallback(async() => {

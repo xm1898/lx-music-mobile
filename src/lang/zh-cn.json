@@ -163,6 +163,7 @@
   "music_toggle__confirm": "确认",
   "music_toggle__duplicate_tip": "列表中已存在相同的歌曲，是否将其移除并继续？",
   "name": "歌曲名：{name}",
+  "nav_wy_library": "我的音乐库",
   "nav_exit": "退出应用",
   "nav_love": "我的列表",
   "nav_search": "搜索",

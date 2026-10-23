@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import WyLibrary from '../Views/WyLibrary'
 import Search from '../Views/Search'
 import SongList from '../Views/SongList'
 import Mylist from '../Views/Mylist'
@@ -24,6 +25,7 @@ const Main = () => {
 
   const component = useMemo(() => {
     switch (id) {
+      case 'nav_wy_library': return <WyLibrary />
       case 'nav_songlist': return <SongList />
       case 'nav_top': return <Leaderboard />
       case 'nav_love': return <Mylist />
