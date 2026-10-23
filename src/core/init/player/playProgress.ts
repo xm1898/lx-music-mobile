@@ -10,6 +10,7 @@ import settingState from '@/store/setting/state'
 import { onScreenStateChange } from '@/utils/nativeModules/utils'
 import { AppState } from 'react-native'
 import { handleScrobble } from '@/core/wy'
+import { addWyPlayDuration, recordWyPlay } from '@/core/wyHistory'
 
 const delaySavePlayInfo = throttleBackgroundTimer(() => {
   void savePlayInfo({
@@ -26,6 +27,18 @@ export default () => {
   let updateTimeout: number | null = null
 
   let isScreenOn = true
+  // 已记过播放历史的歌曲 id，避免 musicToggled 重复记
+  let lastRecordedMusicId = ''
+
+  const recordHistory = (musicInfo: unknown) => {
+    if (!musicInfo || typeof musicInfo != 'object') return
+    const source = (musicInfo as { source?: string }).source
+    if (source != 'wy') return
+    const info = musicInfo as LX.Music.MusicInfoOnline
+    if (info.id == lastRecordedMusicId) return
+    lastRecordedMusicId = info.id
+    recordWyPlay(info)
+  }
 
   const getCurrentTime = () => {
     let id = playerState.musicInfo.id
@@ -38,6 +51,8 @@ export default () => {
       const musicInfo = playerState.playMusicInfo.musicInfo
       if (musicInfo && 'source' in musicInfo && musicInfo.source == 'wy') {
         handleScrobble(musicInfo as unknown as LX.Music.MusicInfoOnline, position, playerState.progress.maxPlayTime)
+        // 本地听歌统计：每秒累加，只在真播放时算
+        if (playerState.isPlay) addWyPlayDuration(musicInfo as unknown as LX.Music.MusicInfoOnline, 1)
       }
 
       if (settingState.setting['player.isSavePlayTime'] && !playerState.playMusicInfo.isTempPlay && isScreenOn) {
@@ -124,6 +139,7 @@ export default () => {
     // void setCurrentTime(playerState.progress.nowPlayTime)
     // setMaxplayTime(playProgress.maxPlayTime)
     handlePause()
+    recordHistory(playerState.playMusicInfo.musicInfo)
     if (!playerState.playMusicInfo.isTempPlay) {
       void savePlayInfo({
         time: playerState.progress.nowPlayTime,

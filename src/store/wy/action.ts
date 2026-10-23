@@ -5,7 +5,7 @@ export const setAccount = (account: WyAccountInfo | null) => {
   global.state_event.wyAccountChanged()
 }
 
-export const setLikedSongIds = (ids: (string | number)[]) => {
+export const setLikedSongIds = (ids: Array<string | number>) => {
   state.likedSongIds = new Set(ids.map(String))
   state.likedListInited = true
   global.state_event.wyLikedListChanged()

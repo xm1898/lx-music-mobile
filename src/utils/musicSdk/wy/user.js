@@ -46,19 +46,14 @@ const request = (url, cookie, data = {}, retryNum = 0) => {
 export default {
   /**
    * 拉取账号信息，同时用于校验 cookie 是否有效
-   * @returns {{uid: string, nickname: string, avatarUrl: string, vipType: number}}
+   * @returns {Promise<{uid: string, nickname: string, avatarUrl: string, vipType: number}>}
    */
   async getAccountInfo(cookie) {
     if (!isLoginCookie(cookie)) throw new Error('cookie_invalid')
 
     let body
     let statusCode = 0
-    try {
-      ({ body, statusCode } = await request('https://music.163.com/weapi/w/nuser/account/get', cookie))
-    } catch (err) {
-      // 网络错误，直接抛
-      throw err
-    }
+    ;({ body, statusCode } = await request('https://music.163.com/weapi/w/nuser/account/get', cookie))
     // 新版路径拿不到时回落到旧版路径，两者返回结构一致
     if (statusCode !== 200 || !body?.account?.id) {
       const res = await request('https://music.163.com/weapi/nuser/account/get', cookie)

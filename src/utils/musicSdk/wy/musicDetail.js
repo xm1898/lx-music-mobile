@@ -61,10 +61,16 @@ export default {
 
       types.reverse()
 
+      // 别名（tns 是翻译名，alia 是别名）和 VIP 标记，列表页要显示
+      const alias = item.tns?.[0] ?? item.alia?.[0] ?? ''
+      // fee: 0 免费 / 1 VIP 歌曲 / 4 付费专辑
+      const vip = item.fee == 1 || item.fee == 4
       if (item.pc) {
         list.push({
           singer: item.pc.ar ?? '',
           name: item.pc.sn ?? '',
+          alias,
+          vip,
           albumName: item.pc.alb ?? '',
           albumId: item.al?.id,
           source: 'wy',
@@ -81,6 +87,8 @@ export default {
         list.push({
           singer: this.getSinger(item.ar),
           name: item.name ?? '',
+          alias,
+          vip,
           albumName: item.al?.name,
           albumId: item.al?.id,
           source: 'wy',

@@ -25,6 +25,9 @@ export enum COMPONENT_IDS {
   playDetail = 'playDetail',
   songlistDetail = 'songlistDetail',
   comment = 'comment',
+  wyDetail = 'wyDetail',
+  wyLibrary = 'wyLibrary',
+  wyHistory = 'wyHistory',
 }
 
 export enum NAV_SHEAR_NATIVE_IDS {
@@ -81,6 +84,7 @@ export const storageDataPrefix = {
 
   wyAccount: '@wy_account',
   wyDailyRec: '@wy_daily_rec',
+  wyHistory: '@wy_history',
 } as const
 
 // v0.x.x 版本的 data keys

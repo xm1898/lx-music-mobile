@@ -29,6 +29,8 @@ declare namespace LX {
       qualitys: MusicQualityType[]
       _qualitys: _MusicQualityType
       albumId?: string | number // 歌曲专辑ID
+      alias?: string // 歌曲别名/翻译名（网易云 tns/alia）
+      vip?: boolean // 是否需要会员才能完整播放（网易云 fee=1/4）
     }
 
     interface MusicInfoMeta_local extends MusicInfoMetaBase {

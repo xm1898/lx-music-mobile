@@ -1,4 +1,4 @@
-import { Navigation } from 'react-native-navigation'
+import { Navigation, type Options } from 'react-native-navigation'
 // import { InteractionManager } from 'react-native'
 
 import {
@@ -6,6 +6,9 @@ import {
   PLAY_DETAIL_SCREEN,
   SONGLIST_DETAIL_SCREEN,
   COMMENT_SCREEN,
+  WY_DETAIL_SCREEN,
+  WY_LIBRARY_SCREEN,
+  WY_HISTORY_SCREEN,
   // SETTING_SCREEN,
 } from './screenNames'
 
@@ -14,6 +17,7 @@ import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { getStatusBarStyle } from './utils'
 import { windowSizeTools } from '@/utils/windowSizeTools'
 import { type ListInfoItem } from '@/store/songlist/state'
+import { type WyDetailInfo } from '@/store/wy/state'
 
 // const store = getStore()
 // const getTheme = () => getter('common', 'theme')(store.getState())
@@ -382,6 +386,84 @@ export function pushCommentScreen(componentId: string) {
             },
           },
         },
+      },
+    })
+  })
+}
+
+/** 网易云相关屏共用的推入参数：无导航栏、内容色随主题 */
+const wyScreenPushOptions = (): Options => {
+  const theme = themeState.theme
+  return {
+    topBar: {
+      visible: false,
+      height: 0,
+      drawBehind: false,
+    },
+    statusBar: {
+      drawBehind: true,
+      visible: true,
+      style: getStatusBarStyle(theme.isDark),
+      backgroundColor: 'transparent',
+    },
+    navigationBar: {
+      backgroundColor: theme['c-content-background'],
+    },
+    layout: {
+      componentBackgroundColor: theme['c-content-background'],
+    },
+    animations: {
+      push: {
+        content: {
+          translationX: {
+            from: windowSizeTools.getSize().width,
+            to: 0,
+            duration: 300,
+          },
+        },
+      },
+      pop: {
+        content: {
+          translationX: {
+            from: 0,
+            to: windowSizeTools.getSize().width,
+            duration: 300,
+          },
+        },
+      },
+    },
+  }
+}
+
+export function pushWyDetailScreen(componentId: string, info: WyDetailInfo) {
+  requestAnimationFrame(() => {
+    void Navigation.push(componentId, {
+      component: {
+        name: WY_DETAIL_SCREEN,
+        passProps: { info },
+        options: wyScreenPushOptions(),
+      },
+    })
+  })
+}
+
+export function pushWyLibraryScreen(componentId: string) {
+  requestAnimationFrame(() => {
+    void Navigation.push(componentId, {
+      component: {
+        name: WY_LIBRARY_SCREEN,
+        options: wyScreenPushOptions(),
+      },
+    })
+  })
+}
+
+export function pushWyHistoryScreen(componentId: string) {
+  requestAnimationFrame(() => {
+    void Navigation.push(componentId, {
+      component: {
+        name: WY_HISTORY_SCREEN,
+        options: wyScreenPushOptions(),
       },
     })
   })

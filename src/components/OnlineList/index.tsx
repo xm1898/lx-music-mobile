@@ -7,12 +7,15 @@ import ListMusicMultiAdd, { type MusicMultiAddModalType as ListAddMultiType } fr
 import ListMusicAdd, { type MusicAddModalType as ListMusicAddType } from '@/components/MusicAddModal'
 import MultipleModeBar, { type MultipleModeBarType, type SelectMode } from './MultipleModeBar'
 import { clearMusicUrl, handleDislikeMusic, handlePlay, handlePlayLater, handleShare, handleShowMusicSourceDetail } from './listAction'
-import { createStyle } from '@/utils/tools'
+import { playSimilarSongs } from '@/core/wy'
+import { createStyle, toast } from '@/utils/tools'
+import { useI18n } from '@/lang'
 
 export interface OnlineListProps {
   onRefresh: ListProps['onRefresh']
   onLoadMore: ListProps['onLoadMore']
   onPlayList?: ListProps['onPlayList']
+  onSimilarSongs?: (musicInfo: LX.Music.MusicInfoOnline) => void
   progressViewOffset?: ListProps['progressViewOffset']
   ListHeaderComponent?: ListProps['ListHeaderComponent']
   checkHomePagerIdle?: boolean
@@ -27,6 +30,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
   onRefresh,
   onLoadMore,
   onPlayList,
+  onSimilarSongs,
   progressViewOffset,
   ListHeaderComponent,
   checkHomePagerIdle = false,
@@ -78,6 +82,21 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
     }
   }
 
+  const t = useI18n()
+
+  // 相似歌曲：拉相似列表进试听列表播放，失败只提示不打断当前播放
+  const handleSimilarSongs = (musicInfo: LX.Music.MusicInfoOnline) => {
+    if (onSimilarSongs) {
+      onSimilarSongs(musicInfo)
+      return
+    }
+    void playSimilarSongs(musicInfo).then(count => {
+      if (count) toast(t('similar_songs_started', { count: String(count) }))
+    }).catch((err: any) => {
+      toast(err?.message == 'empty' ? t('similar_songs_empty') : t('similar_songs_failed'))
+    })
+  }
+
   return (
     <View style={styles.container}>
       <View style={{ flex: 1 }}>
@@ -112,6 +131,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(({
         onMusicSourceDetail={info => { void handleShowMusicSourceDetail(info.musicInfo) }}
         onRemoveCache={info => { void clearMusicUrl(info.musicInfo) }}
         onDislikeMusic={info => { void handleDislikeMusic(info.musicInfo) }}
+        onSimilarSongs={info => { handleSimilarSongs(info.musicInfo) }}
       />
       {/* <LoadingMask ref={loadingMaskRef} /> */}
     </View>

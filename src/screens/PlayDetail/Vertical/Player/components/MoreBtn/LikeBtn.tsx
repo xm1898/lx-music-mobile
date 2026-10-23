@@ -13,9 +13,13 @@ import { toast } from '@/utils/tools'
  * 匹配错了会往用户歌单里塞错误歌曲，不做。
  */
 const getSongId = (musicInfo: LX.Player.MusicInfo | null) => {
-  if (!musicInfo || !('source' in musicInfo) || musicInfo.source !== 'wy') return ''
-  const meta = musicInfo.meta as { songId?: string | number } | undefined
-  return String(meta?.songId ?? musicInfo.id.replace(/^wy_/, ''))
+  if (!musicInfo) return ''
+  // Player.MusicInfo 是联合类型，用 in  narrowing 拿不到 meta，直接按 source 字段判定
+  const source = (musicInfo as { source?: string }).source
+  if (source !== 'wy') return ''
+  const info = musicInfo as unknown as LX.Music.MusicInfoOnline
+  const meta = info.meta as { songId?: string | number } | undefined
+  return String(meta?.songId ?? info.id.replace(/^wy_/, ''))
 }
 
 export default () => {

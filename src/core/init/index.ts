@@ -15,6 +15,7 @@ import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
 import { cheatTip } from '@/utils/tools'
 import { initWy } from '@/core/wy'
+import { initWyHistory } from '@/core/wyHistory'
 
 let isFirstPush = true
 const handlePushedHomeScreen = async() => {
@@ -67,6 +68,10 @@ export default async() => {
   // 网易云账号：有 cookie 时后台校验并刷新信息，不阻塞启动
   void initWy()
   bootLog('Wy account inited.')
+
+  // 网易云播放历史 / 听歌统计：读本地缓存，失败不影响启动
+  void initWyHistory()
+  bootLog('Wy history inited.')
 
   // syncSetting()
 

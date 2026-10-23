@@ -8,6 +8,7 @@ import getLyric from './lyric'
 import getMusicInfo from './musicInfo'
 import musicSearch from './musicSearch'
 import songList from './songList'
+import library from './library'
 import hotSearch from './hotSearch'
 import comment from './comment'
 // import tipSearch from './tipSearch'
@@ -17,6 +18,7 @@ const wy = {
   leaderboard,
   musicSearch,
   songList,
+  library,
   hotSearch,
   comment,
   user,

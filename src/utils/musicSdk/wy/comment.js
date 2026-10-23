@@ -171,6 +171,44 @@ export default {
     const total = body.total ?? 0
     return { source: 'wy', comments: this.filterComment(body.hotComments), total, page, limit, maxPage: Math.ceil(total / limit) || 1 }
   },
+  /**
+   * 发送评论 / 回复
+   * @param {string} cookie 登录态 cookie
+   * @param {string|number} songId 歌曲 id
+   * @param {string} content 评论内容
+   * @param {string|number} [replyToId] 回复某条评论时传该评论 id
+   */
+  async sendComment(cookie, songId, content, replyToId) {
+    if (!cookie) throw new Error('cookie_required')
+    if (!content?.trim()) throw new Error('comment_empty')
+    const threadId = 'R_SO_4_' + songId
+    const csrf = (cookie.match(/_csrf=([^(;|$)]+)/) || [])[1] || ''
+    // 发评论必须带 __csrf，web 登录态一般会有；没有就只能让用户重新登录
+    if (!csrf) throw new Error('csrf_required')
+    const data = {
+      threadId,
+      content: content.trim(),
+      commentType: 0,
+      csrf_token: csrf,
+    }
+    if (replyToId) {
+      data.commentId = replyToId
+    }
+    const { body, statusCode } = await httpFetch('https://music.163.com/weapi/resource/comments/add', {
+      method: 'post',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        origin: 'https://music.163.com',
+        Referer: 'https://music.163.com',
+        cookie,
+      },
+      form: weapi(data),
+    }).promise
+    if (statusCode !== 200 || body.code !== 200) {
+      throw new Error(body?.message || body?.msg || 'send_comment_failed')
+    }
+    return body.comment ?? true
+  },
   filterComment(rawList) {
     return rawList.map(item => {
       let data = {

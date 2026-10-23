@@ -9,6 +9,7 @@ import { formatPlayTime, sizeFormate, dateFormat, formatPlayCount } from '../../
 import musicDetailApi from './musicDetail'
 import { eapiRequest } from './utils/index'
 import { formatSingerName } from '../utils'
+import settingState from '@/store/setting/state'
 
 export default {
   _requestObj_tags: null,
@@ -70,7 +71,9 @@ export default {
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
 
     const { id, cookie } = await this.getListId(rawId)
-    if (cookie) this.cookie = cookie
+    // 登录后带上账号 cookie，否则「我的歌单」「我喜欢的音乐」这类私有歌单会被当成未登录处理；
+    // 同时每次都用设置里的当前值覆盖，登出后不会残留上一个账号的 cookie
+    this.cookie = cookie || settingState.setting['common.wyCookie'] || 'MUSIC_U='
 
     const requestObj_listDetail = httpFetch('https://music.163.com/api/linux/forward', {
       method: 'post',

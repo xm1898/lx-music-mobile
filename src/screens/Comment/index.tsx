@@ -5,6 +5,7 @@ import Header from './components/Header'
 import { Icon } from '@/components/common/Icon'
 import CommentHot from './CommentHot'
 import CommentNew from './CommentNew'
+import SendBar from './components/SendBar'
 import { createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
@@ -15,6 +16,7 @@ import PageContent from '@/components/PageContent'
 import playerState from '@/store/player/state'
 import { scaleSizeH } from '@/utils/pixelRatio'
 import { BorderWidths } from '@/theme'
+import { isWyLogin } from '@/core/wy'
 
 type ActiveId = 'hot' | 'new'
 
@@ -86,6 +88,8 @@ export default memo(({ componentId }: {
   const t = useI18n()
   const theme = useTheme()
   const [total, setTotal] = useState({ hot: 0, new: 0 })
+  // 发评论成功后自增，让评论列表整体重拉
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     setComponentId(COMPONENT_IDS.comment, componentId)
@@ -127,6 +131,13 @@ export default memo(({ componentId }: {
     setTotal(totalInfo => ({ ...totalInfo, new: total }))
   }, [])
 
+  const handleCommentSent = useCallback(() => {
+    setReloadKey(key => key + 1)
+  }, [])
+
+  // 只有网易云来源且已登录才能发评论
+  const showSendBar = musicInfo != null && musicInfo.source == 'wy' && isWyLogin()
+
   const commentComponent = useMemo(() => {
     return (
       <View style={styles.container}>
@@ -147,15 +158,15 @@ export default memo(({ componentId }: {
           style={styles.pagerView}
         >
           <View collapsable={false} style={styles.pageStyle}>
-            <HotCommentPage activeId={activeId} musicInfo={musicInfo as LX.Music.MusicInfoOnline} onUpdateTotal={setHotTotal} />
+            <HotCommentPage key={`hot_${reloadKey}`} activeId={activeId} musicInfo={musicInfo as LX.Music.MusicInfoOnline} onUpdateTotal={setHotTotal} />
           </View>
           <View collapsable={false} style={styles.pageStyle}>
-            <NewCommentPage activeId={activeId} musicInfo={musicInfo as LX.Music.MusicInfoOnline} onUpdateTotal={setNewTotal} />
+            <NewCommentPage key={`new_${reloadKey}`} activeId={activeId} musicInfo={musicInfo as LX.Music.MusicInfoOnline} onUpdateTotal={setNewTotal} />
           </View>
         </PagerView>
       </View>
     )
-  }, [activeId, musicInfo, onPageSelected, refreshComment, setHotTotal, setNewTotal, tabs, theme, toggleTab])
+  }, [activeId, musicInfo, onPageSelected, refreshComment, reloadKey, setHotTotal, setNewTotal, tabs, theme, toggleTab])
 
   return (
     <PageContent>
@@ -171,7 +182,15 @@ export default memo(({ componentId }: {
                   <Text>{t('comment_not support')}</Text>
                 </View>
                   )
-                : commentComponent
+                : <>
+                  {commentComponent}
+                  {showSendBar ? (
+                    <SendBar
+                      songId={musicInfo.meta.songId}
+                      onSent={handleCommentSent}
+                    />
+                  ) : null}
+                </>
             }
         </>
       }

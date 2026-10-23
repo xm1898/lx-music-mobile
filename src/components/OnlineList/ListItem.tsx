@@ -42,6 +42,7 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
   isShowInterval: boolean
 }) => {
   const theme = useTheme()
+  const t = useI18n()
 
   const isSelected = selectedList.includes(item)
 
@@ -63,9 +64,13 @@ export default memo(({ item, index, showSource, onPress, onLongPress, onShowMenu
       <TouchableOpacity style={styles.listItemLeft} onPress={() => { onPress(item, index) }} onLongPress={() => { onLongPress(item, index) }}>
         <Text style={styles.sn} size={13} color={theme['c-300']}>{index + 1}</Text>
         <View style={styles.itemInfo}>
-          <Text numberOfLines={1}>{item.name}</Text>
+          <View style={styles.titleRow}>
+            <Text numberOfLines={1} style={styles.nameText}>{item.name}</Text>
+            { item.meta.alias ? <Text size={11} color={theme['c-450']} numberOfLines={1} style={styles.aliasText}>（{item.meta.alias}）</Text> : null }
+          </View>
           <View style={styles.listItemSingle}>
             { tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null }
+            { item.meta.vip ? <Badge type="normal">{t('vip_tag')}</Badge> : null }
             { showSource ? <Badge type="tertiary">{item.source}</Badge> : null }
             <Text style={styles.listItemSingleText} size={11} color={theme['c-500']} numberOfLines={1}>{singer}</Text>
           </View>
@@ -121,6 +126,17 @@ const styles = createStyle({
     paddingRight: 2,
     // paddingTop: 10,
     // paddingBottom: 10,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  nameText: {
+    flexShrink: 1,
+  },
+  aliasText: {
+    flexShrink: 1,
+    paddingLeft: 2,
   },
   // listItemTitle: {
   //   // backgroundColor: 'rgba(0,0,0,0.2)',

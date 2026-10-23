@@ -62,6 +62,11 @@ export const toNewMusicInfo = (oldMusicInfo: any): LX.Music.MusicInfo => {
         meta.hash = oldMusicInfo.hash
         newInfo.id = oldMusicInfo.songmid + '_' + oldMusicInfo.hash
         break
+      case 'wy':
+        // 别名（翻译名/别名）与 VIP 标记，来自 song/detail 的 tns/alia 和 fee
+        meta.alias = oldMusicInfo.alias ?? ''
+        meta.vip = !!oldMusicInfo.vip
+        break
       case 'tx':
         meta.strMediaMid = oldMusicInfo.strMediaMid
         meta.albumMid = oldMusicInfo.albumMid

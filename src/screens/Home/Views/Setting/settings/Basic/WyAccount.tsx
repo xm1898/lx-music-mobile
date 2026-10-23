@@ -13,6 +13,8 @@ import { createStyle, toast } from '@/utils/tools'
 import { updateSetting } from '@/core/common'
 import { useWyAccount } from '@/store/wy/hook'
 import { getDailyRecSyncStatus, logoutWy, syncDailyRecommend } from '@/core/wy'
+import { navigations } from '@/navigation'
+import commonState from '@/store/common/state'
 import WebLoginModal, { type WebLoginModalType } from '@/components/WebLoginModal'
 
 export default memo(() => {
@@ -71,11 +73,19 @@ export default memo(() => {
       setSyncedCount(count)
       toast(`${t('setting_wy_daily_rec_added')} ${count}`)
     } catch (err: any) {
-      toast(err.message == 'empty' ? t('setting_wy_daily_rec_empty') : (err.message || t('setting_wy_daily_rec_failed')))
+      toast((err as Error)?.message == 'empty' ? t('setting_wy_daily_rec_empty') : ((err as Error)?.message || t('setting_wy_daily_rec_failed')))
     } finally {
       setSyncing(false)
     }
   }, [syncing, t])
+
+  const handleOpenLibrary = useCallback(() => {
+    navigations.pushWyLibraryScreen(commonState.componentIds.home!)
+  }, [])
+
+  const handleOpenHistory = useCallback(() => {
+    navigations.pushWyHistoryScreen(commonState.componentIds.home!)
+  }, [])
 
   return (
     <SubTitle title={t('setting_wy_account')}>
@@ -119,6 +129,8 @@ export default memo(() => {
             ? (
               <>
                 <Button onPress={handleDailyRec} disabled={syncing}>{t('setting_wy_daily_rec')}</Button>
+                <Button onPress={handleOpenLibrary}>{t('setting_wy_open_library')}</Button>
+                <Button onPress={handleOpenHistory}>{t('setting_wy_open_history')}</Button>
                 <Button onPress={handleLogout}>{t('setting_wy_logout')}</Button>
               </>
               )

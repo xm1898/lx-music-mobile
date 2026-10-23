@@ -3,6 +3,7 @@ import { useI18n } from '@/lang'
 import Menu, { type Menus, type MenuType, type Position } from '@/components/common/Menu'
 import { hasDislike } from '@/core/dislikeList'
 import { hasMusicUrlByMusic } from '@/utils/data'
+import { isWyLogin } from '@/core/wy'
 
 export interface SelectInfo {
   musicInfo: LX.Music.MusicInfoOnline
@@ -23,6 +24,7 @@ export interface ListMenuProps {
   onMusicSourceDetail: (selectInfo: SelectInfo) => void
   onRemoveCache: (selectInfo: SelectInfo) => void
   onDislikeMusic: (selectInfo: SelectInfo) => void
+  onSimilarSongs?: (selectInfo: SelectInfo) => void
 }
 export interface ListMenuType {
   show: (selectInfo: SelectInfo, position: Position) => void
@@ -65,6 +67,10 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
       { action: 'removeCache', disabled: !has_url_cache, label: t('list_remove_cache') },
       { action: 'dislike', label: t('dislike'), disabled: hasDislike(musicInfo) },
     ]
+    // 相似歌曲只对网易云来源且已登录的账号开放
+    if (musicInfo.source == 'wy' && isWyLogin()) {
+      menu.splice(1, 0, { action: 'similarSongs', label: t('similar_songs') })
+    }
     setMenus(menu)
     void hasUrlCache(musicInfo).then((_has_url_cache) => {
       let isUpdated = false
@@ -86,6 +92,9 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
         break
       case 'playLater':
         props.onPlayLater(selectInfo)
+        break
+      case 'similarSongs':
+        props.onSimilarSongs?.(selectInfo)
         break
       case 'add':
         props.onAdd(selectInfo)
