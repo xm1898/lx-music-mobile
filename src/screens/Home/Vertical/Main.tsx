@@ -215,19 +215,19 @@ const SettingPage = () => {
 }
 
 const viewMap = {
-  nav_wy_library: 0,
-  nav_search: 1,
-  nav_songlist: 2,
-  nav_top: 3,
-  nav_love: 4,
+  nav_search: 0,
+  nav_songlist: 1,
+  nav_top: 2,
+  nav_love: 3,
+  nav_wy_library: 4,
   nav_setting: 5,
 }
 const indexMap = [
-  'nav_wy_library',
   'nav_search',
   'nav_songlist',
   'nav_top',
   'nav_love',
+  'nav_wy_library',
   'nav_setting',
 ] as const
 
@@ -312,9 +312,6 @@ const Main = () => {
       scrollEnabled={settingState.setting['common.homePageScroll']}
       style={styles.pagerView}
     >
-      <View collapsable={false} key="nav_wy_library" style={styles.pageStyle}>
-        <WyLibraryPage />
-      </View>
       <View collapsable={false} key="nav_search" style={styles.pageStyle}>
         <SearchPage />
       </View>
@@ -326,6 +323,9 @@ const Main = () => {
       </View>
       <View collapsable={false} key="nav_love" style={styles.pageStyle}>
         <MylistPage />
+      </View>
+      <View collapsable={false} key="nav_wy_library" style={styles.pageStyle}>
+        <WyLibraryPage />
       </View>
       <View collapsable={false} key="nav_setting" style={styles.pageStyle}>
         <SettingPage />

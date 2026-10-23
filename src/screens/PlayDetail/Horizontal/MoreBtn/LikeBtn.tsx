@@ -1,15 +1,15 @@
 import { useCallback } from 'react'
 
 import Btn from './Btn'
-import { usePlayerMusicInfo } from '@/store/player/hook'
+import { usePlayMusicInfo } from '@/store/player/hook'
 import { useIsWyLiked, useWyAccount } from '@/store/wy/hook'
 import { useTheme } from '@/store/theme/hook'
 import { toggleLike } from '@/core/wy'
 import { toast } from '@/utils/tools'
 
-const getSongId = (musicInfo: LX.Player.MusicInfo | null) => {
+const getSongId = (musicInfo: LX.Player.PlayMusic | null) => {
   if (!musicInfo) return ''
-  // Player.MusicInfo 是联合类型，用 in  narrowing 拿不到 meta，直接按 source 字段判定
+  // PlayMusic 是 MusicInfo | Download.ListItem 联合类型，in narrowing 拿不到 meta，直接按 source 字段判定
   const source = (musicInfo as { source?: string }).source
   if (source !== 'wy') return ''
   const info = musicInfo as unknown as LX.Music.MusicInfoOnline
@@ -20,8 +20,8 @@ const getSongId = (musicInfo: LX.Player.MusicInfo | null) => {
 export default () => {
   const theme = useTheme()
   const account = useWyAccount()
-  const musicInfo = usePlayerMusicInfo()
-  const songId = getSongId(musicInfo)
+  // usePlayMusicInfo 返回 { listId, musicInfo, isTempPlay }，歌曲信息在 .musicInfo 上
+  const songId = getSongId(usePlayMusicInfo().musicInfo)
   const isLiked = useIsWyLiked(songId || '__none__')
 
   const handlePress = useCallback(() => {
