@@ -71,6 +71,14 @@ export const updateSetting = (setting?: Partial<LX.AppSetting> | null, isInit: b
 
   const result = mergeSetting(originSetting, setting)
 
+  // 桌面歌词水平对齐：兜底旧版字符串值（'left'|'center'|'right'）→ 0~100 数值（50=居中）。
+  // initSetting 只对 v1 旧存储跑 migrateSetting，新版存储里的字符串不会被迁移，
+  // 必须在这里统一归一，否则 Slider value 收到字符串会崩。
+  const textPositionX = result.setting['desktopLyric.textPosition.x'] as unknown
+  if (typeof textPositionX !== 'number') {
+    result.setting['desktopLyric.textPosition.x'] = textPositionX === 'left' ? 0 : textPositionX === 'right' ? 100 : 50
+  }
+
   result.setting.version = defaultSetting.version
 
   return result

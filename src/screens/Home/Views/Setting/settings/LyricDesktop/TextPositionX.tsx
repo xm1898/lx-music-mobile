@@ -14,7 +14,9 @@ import { updateSetting } from '@/core/common'
 
 export default memo(() => {
   const t = useI18n()
-  const textPositionX = useSettingValue('desktopLyric.textPosition.x')
+  const rawTextPositionX = useSettingValue('desktopLyric.textPosition.x')
+  // 兜底：旧版存储可能残留 'left'|'center'|'right' 字符串，转成数值再喂 Slider
+  const textPositionX = typeof rawTextPositionX === 'number' ? rawTextPositionX : rawTextPositionX === 'left' ? 0 : rawTextPositionX === 'right' ? 100 : 50
   const theme = useTheme()
   const [sliderX, setSliderX] = useState(textPositionX)
   const [isSliding, setSliding] = useState(false)
