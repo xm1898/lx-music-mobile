@@ -538,18 +538,18 @@ public class LyricView extends Activity implements View.OnTouchListener {
   }
 
   /**
-   * 应用水平偏移：textView 保持窗口内水平居中，用 translationX 把文字从居中位置
-   * 左右平移。textX 范围 0~100，50 为居中（无偏移），0 贴左缘，100 贴右缘。
+   * 应用水平偏移：textView 撑满整个窗口（宽度 = layoutParams.width），gravity 水平居中。
+   * translationX 让文字中心在窗口内左右移动：textX=50 无偏移（居中），
+   * textX=0 文字中心移到窗口左缘，textX=100 移到右缘。
+   * 注意：不能用 (w - textView.getWidth())/2 做上限——textView 宽度等于窗口宽度，
+   * 那个差值恒为 0，滑钮会完全不动。
    */
   private void applyTextPositionX() {
     if (textView == null || layoutParams == null) return;
     float w = layoutParams.width;
     if (w <= 0) return;
-    float tw = textView.getWidth();
-    if (tw <= 0) tw = w; // 尚未布局，按窗口宽兜底，下次 onLayout 会再校正
-    float maxOffset = Math.max(0f, (w - tw) / 2f);
     float ratio = (float) (textX / 100.0);
-    textView.setTranslationX((ratio - 0.5f) * 2f * maxOffset);
+    textView.setTranslationX((ratio - 0.5f) * w);
   }
 
   public void setAlpha(float alpha) {
