@@ -45,5 +45,12 @@ export default (setting: any): Partial<LX.AppSetting> => {
     setting['theme.id'] = setting.themeId
   }
 
+  // 桌面歌词水平对齐：旧版三档字符串 → 0~100 数值（50=居中）
+  // 不依赖版本号，只要还是字符串就转，保证老配置不丢
+  const textPositionX = setting['desktopLyric.textPosition.x']
+  if (typeof textPositionX === 'string') {
+    setting['desktopLyric.textPosition.x'] = textPositionX === 'left' ? 0 : textPositionX === 'right' ? 100 : 50
+  }
+
   return setting
 }

@@ -183,7 +183,7 @@ public class LyricModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void setLyricTextPosition(String positionX, String positionY, Promise promise) {
+  public void setLyricTextPosition(double positionX, String positionY, Promise promise) {
     if (lyric != null) lyric.setLyricTextPosition(positionX, positionY);
     promise.resolve(null);
   }

@@ -86,7 +86,7 @@ export const showDesktopLyricView = async({
     textSize: getTextSize(textSize),
     lyricViewX: positionX,
     lyricViewY: positionY,
-    textX: textPositionX.toUpperCase(),
+    textX: textPositionX,
     textY: textPositionY.toUpperCase(),
     width,
     maxLineNum,
@@ -206,7 +206,7 @@ export const setWidth = async(width: number): Promise<void> => {
 // }
 
 export const setLyricTextPosition = async(textX: LX.AppSetting['desktopLyric.textPosition.x'], textY: LX.AppSetting['desktopLyric.textPosition.y']): Promise<void> => {
-  return LyricModule.setLyricTextPosition(textX.toUpperCase(), textY.toUpperCase())
+  return LyricModule.setLyricTextPosition(textX, textY.toUpperCase())
 }
 
 export const checkOverlayPermission = async(): Promise<void> => {

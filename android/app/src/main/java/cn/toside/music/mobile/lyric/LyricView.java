@@ -57,7 +57,7 @@ public class LyricView extends Activity implements View.OnTouchListener {
   private String playedColor = "rgba(7, 197, 86, 1)";
   private String shadowColor = "rgba(0, 0, 0, 0.15)";
   // private String lastText = "LX Music ^-^";
-  private String textX = "LEFT";
+  private double textX = 50;
   private String textY = "TOP";
   private float alpha = 1f;
   private float textSize = 18f;
@@ -214,7 +214,7 @@ public class LyricView extends Activity implements View.OnTouchListener {
     shadowColor = options.getString("shadowColor", shadowColor);
     prevViewPercentageX = (float) options.getDouble("lyricViewX", 0f) / 100f;
     prevViewPercentageY = (float) options.getDouble("lyricViewY", 0f) / 100f;
-    textX = options.getString("textX", textX);
+    textX = options.getDouble("textX", textX);
     textY = options.getString("textY", textY);
     alpha = (float) options.getDouble("alpha", alpha);
     textSize = (float) options.getDouble("textSize", textSize);
@@ -261,20 +261,8 @@ public class LyricView extends Activity implements View.OnTouchListener {
     //监听 OnTouch 事件 为了实现"移动歌词"功能
     textView.setOnTouchListener(this);
 
-    int textPositionX;
+    // 水平对齐改为 0~100 数值（50=居中），由 applyTextPositionX() 用 translationX 实现连续偏移
     int textPositionY;
-    switch (textX) {
-      case "CENTER":
-        textPositionX = Gravity.CENTER;
-        break;
-      case "RIGHT":
-        textPositionX = Gravity.END;
-        break;
-      case "Left":
-      default:
-        textPositionX = Gravity.START;
-        break;
-    }
     switch (textY) {
       case "CENTER":
         textPositionY = Gravity.CENTER;
@@ -287,7 +275,8 @@ public class LyricView extends Activity implements View.OnTouchListener {
         textPositionY = Gravity.TOP;
         break;
     }
-    textView.setGravity(textPositionX | textPositionY);
+    textView.setGravity(Gravity.CENTER_HORIZONTAL | textPositionY);
+    applyTextPositionX();
 
     if (!isSingleLine) {
       textView.setMaxLines(maxLineNum);
@@ -367,6 +356,8 @@ public class LyricView extends Activity implements View.OnTouchListener {
 
     //添加到window中
     windowManager.addView(textView, layoutParams);
+    // 布局完成后校正一次水平偏移（此时 getWidth() 才有值）
+    textView.post(this::applyTextPositionX);
   }
 
   public void setLyric(String text, ArrayList<String> extendedLyrics) {
@@ -415,6 +406,7 @@ public class LyricView extends Activity implements View.OnTouchListener {
     if (layoutParams.x != x) layoutParams.x = x;
 
     windowManager.updateViewLayout(textView, layoutParams);
+    applyTextPositionX();
   }
 
   @Override
@@ -522,25 +514,12 @@ public class LyricView extends Activity implements View.OnTouchListener {
     // windowManager.updateViewLayout(textView, layoutParams);
   }
 
-  public void setLyricTextPosition(String textX, String textY) {
+  public void setLyricTextPosition(double textX, String textY) {
     this.textX = textX;
     this.textY = textY;
     if (windowManager == null || textView == null) return;
-    int textPositionX;
     int textPositionY;
     // Log.d("Lyric", "textX: " + textX + "  textY: " + textY);
-    switch (textX) {
-      case "CENTER":
-        textPositionX = Gravity.CENTER_HORIZONTAL;
-        break;
-      case "RIGHT":
-        textPositionX = Gravity.END;
-        break;
-      case "LEFT":
-      default:
-        textPositionX = Gravity.START;
-        break;
-    }
     switch (textY) {
       case "CENTER":
         textPositionY = Gravity.CENTER_VERTICAL;
@@ -553,8 +532,24 @@ public class LyricView extends Activity implements View.OnTouchListener {
         textPositionY = Gravity.TOP;
         break;
     }
-    textView.setGravity(textPositionX | textPositionY);
+    textView.setGravity(Gravity.CENTER_HORIZONTAL | textPositionY);
+    applyTextPositionX();
     windowManager.updateViewLayout(textView, layoutParams);
+  }
+
+  /**
+   * 应用水平偏移：textView 保持窗口内水平居中，用 translationX 把文字从居中位置
+   * 左右平移。textX 范围 0~100，50 为居中（无偏移），0 贴左缘，100 贴右缘。
+   */
+  private void applyTextPositionX() {
+    if (textView == null || layoutParams == null) return;
+    float w = layoutParams.width;
+    if (w <= 0) return;
+    float tw = textView.getWidth();
+    if (tw <= 0) tw = w; // 尚未布局，按窗口宽兜底，下次 onLayout 会再校正
+    float maxOffset = Math.max(0f, (w - tw) / 2f);
+    float ratio = (float) (textX / 100.0);
+    textView.setTranslationX((ratio - 0.5f) * 2f * maxOffset);
   }
 
   public void setAlpha(float alpha) {

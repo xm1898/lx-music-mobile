@@ -284,7 +284,10 @@ declare global {
       /**
        * 歌词水平对齐方式
        */
-      'desktopLyric.textPosition.x': 'left' | 'center' | 'right'
+      /**
+       * 桌面歌词水平对齐位置（0=最左，50=居中，100=最右）
+       */
+      'desktopLyric.textPosition.x': number
 
       /**
        * 歌词垂直对齐方式

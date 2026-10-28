@@ -52,7 +52,7 @@ const defaultSetting: LX.AppSetting = {
   'desktopLyric.showToggleAnima': true,
   'desktopLyric.position.x': 0,
   'desktopLyric.position.y': 0,
-  'desktopLyric.textPosition.x': 'left',
+  'desktopLyric.textPosition.x': 50,
   'desktopLyric.textPosition.y': 'top',
   'desktopLyric.style.fontSize': 180,
   'desktopLyric.style.opacity': 100,

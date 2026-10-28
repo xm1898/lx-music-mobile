@@ -280,7 +280,7 @@ public class Lyric extends LyricPlayer {
     lyricView.setTextSize(size);
   }
 
-  public void setLyricTextPosition(String positionX, String positionY) {
+  public void setLyricTextPosition(double positionX, String positionY) {
     if (lyricView == null) return;
     lyricView.setLyricTextPosition(positionX, positionY);
   }
