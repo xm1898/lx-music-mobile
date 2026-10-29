@@ -289,7 +289,8 @@ export const getDailyRecSyncStatus = async() => {
   return { synced: cache.dateKey === getDailyRecDateKey(), count: cache.count }
 }
 
-/** 自动同步的静默版本，失败只写日志，不打扰用户 */const autoSyncDailyRec = () => {
+/** 自动同步的静默版本，失败只写日志，不打扰用户 */
+const autoSyncDailyRec = () => {
   if (!settingState.setting['common.wyAutoDailyRec']) return
   void syncDailyRecommend().catch(err => {
     // 未登录、当天已同步、网络失败都很常见，不弹提示
@@ -516,7 +517,10 @@ export const isWyLogin = () => !!getCookie()
  * 不落用户列表，避免把搜索结果混进「我的列表」。
  */
 export const playSimilarSongs = async(musicInfo: LX.Music.MusicInfoOnline, size = 30) => {
-  const songId = String(musicInfo.meta.songId)
+  // 本地/下载歌曲没有 songId，直接拒绝——拿 "undefined" 当种子请求接口没有意义
+  if ((musicInfo as { source?: string }).source !== 'wy') throw new Error('only_wy')
+  const songId = String(musicInfo.meta.songId ?? '')
+  if (!songId) throw new Error('only_wy')
   const list = await getHeartModeList(songId, size)
   await setTempList(`wy_similar_${songId}`, list)
   void playList(LIST_IDS.TEMP, 0)

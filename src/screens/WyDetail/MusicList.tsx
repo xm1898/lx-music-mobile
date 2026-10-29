@@ -86,6 +86,7 @@ export default forwardRef<MusicListType, MusicListProps>(({ info }, ref) => {
   }
 
   const handleRefresh: OnlineListProps['onRefresh'] = () => {
+    listRef.current?.setStatus('loading')
     void loadSongs(infoRef.current).then(result => {
       if (isUnmountedRef.current) return
       loadedListRef.current = result.list
@@ -104,6 +105,8 @@ export default forwardRef<MusicListType, MusicListProps>(({ info }, ref) => {
       picUrl={info.picUrl}
       onPlay={() => { handlePlayList(0) }}
     />
+  // handlePlayList 只读 ref 和组件级 listId，引用稳定，不需要进依赖
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   ), [info.name, info.picUrl, desc])
 
   return <OnlineList

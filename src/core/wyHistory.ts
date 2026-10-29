@@ -125,7 +125,14 @@ export const addWyPlayDuration = (musicInfo: LX.Music.MusicInfoOnline, seconds: 
   if (!loaded || musicInfo.source != 'wy' || seconds <= 0) return
   const id = String(musicInfo.meta.songId)
   const item = data.list.find(i => i.id == id)
-  if (item) item.duration += seconds
+  if (item) {
+    item.duration += seconds
+  } else {
+    // 歌曲被历史裁掉（超 MAX_HISTORY）但还在播：重新入列，别把时长丢了
+    recordWyPlay(musicInfo)
+    const reAdded = data.list.find(i => i.id == id)
+    if (reAdded) reAdded.duration += seconds
+  }
   bumpDaily(0, seconds)
   save()
 }
