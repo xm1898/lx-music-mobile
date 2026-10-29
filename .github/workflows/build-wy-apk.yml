@@ -50,6 +50,26 @@ jobs:
           EOF
           echo "keystore.properties written"
 
+      # 版本号：每次构建自动递增（只改 CI 工作区的 package.json，不回写仓库）
+      # 版本串用纯数字第四段（1.9.2.415），App 内 compareVer 能正确比较；
+      # 千万别用 -wy.415 这种字母后缀，compareVer 会把字母当负数，误判成旧版
+      - name: Bump build version
+        id: ver
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const run = Number(process.env.GITHUB_RUN_NUMBER || 0);
+            const base = String(p.version).split('.').slice(0, 3).join('.');
+            const baseCode = Number(p.versionCode || 78);
+            p.version = base + '.' + run;
+            p.versionCode = baseCode + run;
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+            fs.appendFileSync(process.env.GITHUB_ENV, 'BUILD_VERSION=' + p.version + '\n');
+            fs.appendFileSync(process.env.GITHUB_ENV, 'BUILD_VERSION_CODE=' + p.versionCode + '\n');
+            console.log('build version:', p.version, '| versionCode:', p.versionCode);
+          "
+
       - name: Build release
         id: rel
         continue-on-error: true
@@ -102,21 +122,41 @@ jobs:
             echo "::error::没找到 APK，跳过 Release 上传"
             exit 0
           fi
-          echo "uploading: $APK"
+          echo "built: $APK"
           VERSION=$(node -p "require('./package.json').version")
+          # 上传用固定文件名：版本号在 APK 内部（versionName/versionCode），
+          # 下载链接永远不变，不用每次换链接
+          OUT="lx-music-mobile-arm64-v8a.apk"
+          cp "$APK" "$OUT"
+          echo "upload as: $OUT (version $VERSION)"
           TAG="wy-latest"
+          NOTES=$(printf '%s\n' \
+            "**本版本**：\`$VERSION\`（versionCode 见 Android 应用设置）" \
+            "" \
+            "每次 push 到 master 自动更新，文件名固定、链接永久有效。" \
+            "" \
+            "## 下载" \
+            "" \
+            "点下方 **Assets** 里的 \`$OUT\` —— 就是安装包本身，不是 zip。" \
+            "" \
+            "- 适用：Android arm64 手机（近几年机型都是）" \
+            "- 安装：直接覆盖安装，登录状态和歌单都保留" \
+            "" \
+            "> Actions 页面的 artifact 已关闭（那个格式只能是 zip），安装包只在 Release 提供。")
           if ! gh release view "$TAG" > /dev/null 2>&1; then
             gh release create "$TAG" \
               --title "WY 自动构建（arm64-v8a）" \
-              --notes "每次 push 到 master 自动更新，资产同名覆盖，链接永久有效。" \
-              --latest=false
+              --notes "$NOTES" \
+              --latest=true
+          else
+            gh release edit "$TAG" --notes "$NOTES" --latest=true
           fi
-          # 版本号变了文件名也会变，先把旧的 apk 资产清掉，保证 Release 里只有一个 apk
+          # 只保留当前这一个 apk，避免旧文件名残留
           gh release view "$TAG" --json assets -q '.assets[].name' 2>/dev/null | while read -r n; do
-            case "$n" in *.apk) gh release delete-asset "$TAG" "$n" -y || true ;; esac
+            case "$n" in *.apk) [ "$n" = "$OUT" ] || gh release delete-asset "$TAG" "$n" -y || true ;; esac
           done
-          gh release upload "$TAG" "$APK" --clobber
-          echo "下载地址: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$(basename "$APK")"
+          gh release upload "$TAG" "$OUT" --clobber
+          echo "下载地址: https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${OUT}"
 
       - name: Fail if release build failed
         if: steps.rel.outcome == 'failure'
