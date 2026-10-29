@@ -349,12 +349,23 @@ export const handleScrobble = (musicInfo: LX.Music.MusicInfoOnline, playedSecond
  * ------------------------------------------------------------------ */
 
 const LIB_CACHE_TTL = 10 * 60 * 1000
+/** 最多缓存条目数：artist_N / album_N 键随浏览增长，超限淘汰最旧的，防内存缓慢膨胀 */
+const LIB_CACHE_MAX = 50
 const libCache = new Map<string, { time: number, data: any }>()
 
 const withLibCache = async<T>(key: string, force: boolean, fetcher: () => Promise<T>): Promise<T> => {
   const hit = libCache.get(key)
   if (!force && hit && Date.now() - hit.time < LIB_CACHE_TTL) return hit.data as T
   const data = await fetcher()
+  // Map 迭代序即插入序，删最旧的（命中也会更新 time 但不重排序，够了）
+  if (libCache.size >= LIB_CACHE_MAX) {
+    let oldestKey: string | null = null
+    let oldestTime = Infinity
+    for (const [k, v] of libCache) {
+      if (v.time < oldestTime) { oldestTime = v.time; oldestKey = k }
+    }
+    if (oldestKey) libCache.delete(oldestKey)
+  }
   libCache.set(key, { time: Date.now(), data })
   return data
 }
