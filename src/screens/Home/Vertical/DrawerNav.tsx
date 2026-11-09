@@ -4,6 +4,7 @@ import { useI18n } from '@/lang'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
 import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
+import { NeteaseIcon } from '@/components/common/NeteaseIcon'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
 import { NAV_MENUS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
@@ -81,16 +82,21 @@ const MenuItem = ({ id, icon, onPress }: {
   const activeId = useNavActiveId()
   const theme = useTheme()
 
+  const isNetease = id == 'nav_wy_library'
   return activeId == id
     ? <View style={styles.menuItem}>
         <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-primary-font-active']} />
+          {isNetease
+            ? <NeteaseIcon size={20} color={theme['c-primary-font-active']} />
+            : <Icon name={icon} size={20} color={theme['c-primary-font-active']} />}
         </View>
         <Text style={styles.text} color={theme['c-primary-font']}>{t(id)}</Text>
       </View>
     : <TouchableOpacity style={styles.menuItem} onPress={() => { onPress(id) }}>
         <View style={styles.iconContent}>
-          <Icon name={icon} size={20} color={theme['c-font-label']} />
+          {isNetease
+            ? <NeteaseIcon size={20} color={theme['c-font-label']} />
+            : <Icon name={icon} size={20} color={theme['c-font-label']} />}
         </View>
         <Text style={styles.text}>{t(id)}</Text>
       </TouchableOpacity>

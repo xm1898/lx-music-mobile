@@ -4,6 +4,7 @@ import { ScrollView, TouchableOpacity, View, RefreshControl } from 'react-native
 import Image from '@/components/common/Image'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
+import { NeteaseIcon } from '@/components/common/NeteaseIcon'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle, toast } from '@/utils/tools'
@@ -13,10 +14,13 @@ import { setNavActiveId } from '@/core/common'
 import { useWyAccount } from '@/store/wy/hook'
 import {
   getCollectedAlbums,
+  getDailyRecSyncStatus,
+  getDailyRecommendList,
   getFollowedArtists,
   getHeartModeList,
   getMyPlaylists,
   getRecPlaylists,
+  WY_DAILY_LIST_ID,
   type WyAlbumItem,
   type WyArtistItem,
   type WyPlaylistItem,
@@ -47,6 +51,8 @@ export default () => {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [heartModeLoading, setHeartModeLoading] = useState(false)
+  const [dailyRecCount, setDailyRecCount] = useState(0)
+  const [dailyRecPlaying, setDailyRecPlaying] = useState(false)
 
   // 两列网格，减去左右 padding 和中间间距
   const itemWidth = (windowSize.width - GRID_GAP * 3) / 2
@@ -66,17 +72,19 @@ export default () => {
     }
     try {
       // 四个接口并发，单个失败不拖垮整页
-      const [mine, rec, arts, albs] = await Promise.all([
+      const [mine, rec, arts, albs, dailyStatus] = await Promise.all([
         getMyPlaylists(force).catch(() => [] as WyPlaylistItem[]),
         getRecPlaylists(force).catch(() => [] as WyPlaylistItem[]),
         getFollowedArtists(force).catch(() => [] as WyArtistItem[]),
         getCollectedAlbums(force).catch(() => [] as WyAlbumItem[]),
+        getDailyRecSyncStatus().catch(() => ({ synced: false, count: 0 })),
       ])
       if (isUnmountedRef.current) return
       setMyPlaylists(mine)
       setRecPlaylists(rec)
       setArtists(arts)
       setAlbums(albs)
+      setDailyRecCount(dailyStatus.synced ? dailyStatus.count : 0)
     } finally {
       // finally 里不能 return（会吞掉 try 的返回值），只做状态收尾
       if (!isUnmountedRef.current) {
@@ -132,6 +140,31 @@ export default () => {
       if (!isUnmountedRef.current) setHeartModeLoading(false)
     }
   }, [heartModeLoading, t])
+
+  // 点击「每日推荐」卡片：拉今日日推直接进试听列表播放，不落用户列表
+  const handleDailyRec = useCallback(async() => {
+    if (dailyRecPlaying) return
+    setDailyRecPlaying(true)
+    try {
+      const list = await getDailyRecommendList()
+      if (!list.length) {
+        toast(t('setting_wy_daily_rec_empty'))
+        return
+      }
+      await setTempList(WY_DAILY_LIST_ID, list)
+      setDailyRecCount(list.length)
+      void playList(LIST_IDS.TEMP, 0)
+    } catch (err: any) {
+      const msg = typeof err?.message == 'string' ? (err.message as string) : ''
+      if (msg == 'not_login') {
+        toast(t('setting_wy_need_login'))
+      } else {
+        toast(msg || t('setting_wy_daily_rec_failed'))
+      }
+    } finally {
+      if (!isUnmountedRef.current) setDailyRecPlaying(false)
+    }
+  }, [dailyRecPlaying, t])
 
   const renderPlaylistGrid = useCallback((list: WyPlaylistItem[]) => {
     const rows: WyPlaylistItem[][] = []
@@ -192,6 +225,23 @@ export default () => {
     }
     return (
       <>
+        <TouchableOpacity style={{ ...styles.dailyRecCard, backgroundColor: theme['c-primary-background-hover'] }} onPress={handleDailyRec} activeOpacity={0.8}>
+          <View style={styles.dailyRecIconWrap}>
+            <NeteaseIcon size={30} />
+          </View>
+          <View style={styles.heartText}>
+            <Text size={16} color={theme['c-primary-font']}>{t('wy_daily_rec_card_title')}</Text>
+            <Text size={11} color={theme['c-500']}>
+              {dailyRecPlaying
+                ? t('wy_lib_loading')
+                : dailyRecCount > 0
+                  ? `${t('setting_wy_daily_rec_synced')} · ${dailyRecCount}${t('wy_lib_tracks_unit')}`
+                  : t('wy_daily_rec_card_tip')}
+            </Text>
+          </View>
+          <Icon name="chevron-right" size={18} color={theme['c-primary-font']} />
+        </TouchableOpacity>
+
         <TouchableOpacity style={{ ...styles.heartBanner, backgroundColor: theme['c-primary-background-hover'] }} onPress={handleHeartMode} activeOpacity={0.8}>
           <Icon name="love" size={22} color={theme['c-primary-font']} />
           <View style={styles.heartText}>
@@ -243,7 +293,7 @@ export default () => {
         ) : null}
       </>
     )
-  }, [account, loading, myPlaylists, recPlaylists, artists, albums, theme, t, handleHeartMode, handleLogin, handleOpenStats, renderPlaylistGrid, renderAlbumGrid, openArtist])
+  }, [account, loading, myPlaylists, recPlaylists, artists, albums, theme, t, handleHeartMode, handleLogin, handleOpenStats, handleDailyRec, dailyRecPlaying, dailyRecCount, renderPlaylistGrid, renderAlbumGrid, openArtist])
 
   return (
     <ScrollView
@@ -267,6 +317,21 @@ const styles = createStyle({
     borderRadius: 8,
     padding: 12,
     marginBottom: 6,
+  },
+  dailyRecCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 8,
+  },
+  dailyRecIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(212, 60, 51, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heartText: {
     flexGrow: 1,
