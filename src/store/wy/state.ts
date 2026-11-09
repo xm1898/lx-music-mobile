@@ -5,9 +5,9 @@ export interface WyAccountInfo {
   vipType: number
 }
 
-/** 网易云详情屏（歌单 / 歌手 / 专辑）的入参 */
+/** 网易云详情屏（歌单 / 歌手 / 专辑 / 每日推荐）的入参 */
 export interface WyDetailInfo {
-  type: 'playlist' | 'artist' | 'album'
+  type: 'playlist' | 'artist' | 'album' | 'dailyRec'
   id: string
   name: string
   picUrl?: string

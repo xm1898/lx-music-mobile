@@ -1,7 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import OnlineList, { type OnlineListType, type OnlineListProps } from '@/components/OnlineList'
 import songListApi from '@/utils/musicSdk/wy/songList'
-import { getAlbumSongs, getArtistSongs } from '@/core/wy'
+import { getAlbumSongs, getArtistSongs, syncDailyRecommend, WY_DAILY_LIST_ID } from '@/core/wy'
+import { getListMusics } from '@/utils/listManage'
 import { toNewMusicInfo } from '@/utils'
 import Header from './Header'
 import { handlePlay } from './listAction'
@@ -28,6 +29,13 @@ const loadSongs = async(info: WyDetailInfo): Promise<LoadResult> => {
       return { list: await getArtistSongs(info.id) }
     case 'album':
       return { list: await getAlbumSongs(info.id) }
+    case 'dailyRec': {
+      // 每日推荐：先确保当天已同步（带缓存判断，当天只请求一次，跨天自动刷新一批），
+      // 再从固定用户列表 wy_daily_rec 读歌曲，避免每次进页都打网易云接口触发风控
+      await syncDailyRecommend()
+      const list = await getListMusics(WY_DAILY_LIST_ID)
+      return { list: list as LX.Music.MusicInfoOnline[], desc: list.length ? `${list.length}首` : '' }
+    }
     case 'playlist':
     default: {
       // 用户歌单走上游歌单接口（已打 cookie 补丁），自动处理分页与批量详情

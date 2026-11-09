@@ -141,8 +141,8 @@ export default () => {
     }
   }, [heartModeLoading, t])
 
-  // 点击「每日推荐」卡片：拉今日日推直接进试听列表播放，不落用户列表
-  const handleDailyRec = useCallback(async() => {
+  // 点卡片图标：拉今日日推直接播放（不落用户列表）
+  const handleDailyRecPlay = useCallback(async() => {
     if (dailyRecPlaying) return
     setDailyRecPlaying(true)
     try {
@@ -165,6 +165,17 @@ export default () => {
       if (!isUnmountedRef.current) setDailyRecPlaying(false)
     }
   }, [dailyRecPlaying, t])
+
+  // 点卡片右侧：进入今日推荐列表页（列表页内会按天自动刷新一批）
+  const openDailyRecList = useCallback(() => {
+    const homeId = commonState.componentIds.home
+    if (!homeId) return
+    navigations.pushWyDetailScreen(homeId, {
+      type: 'dailyRec',
+      id: WY_DAILY_LIST_ID,
+      name: t('wy_daily_rec_card_title'),
+    })
+  }, [t])
 
   const renderPlaylistGrid = useCallback((list: WyPlaylistItem[]) => {
     const rows: WyPlaylistItem[][] = []
@@ -225,12 +236,14 @@ export default () => {
     }
     return (
       <>
-        <TouchableOpacity style={{ ...styles.dailyRecCard, backgroundColor: theme['c-primary-background-hover'] }} onPress={handleDailyRec} activeOpacity={0.8}>
-          <View style={styles.dailyRecIconWrap}>
-            <NeteaseIcon size={30} />
-          </View>
-          <View style={styles.heartText}>
-            <Text size={16} color={theme['c-primary-font']}>{t('wy_daily_rec_card_title')}</Text>
+        <View style={{ ...styles.dailyRecCard, backgroundColor: theme['c-primary-background-hover'] }}>
+          <TouchableOpacity style={styles.dailyRecIconBtn} onPress={handleDailyRecPlay} activeOpacity={0.7}>
+            <View style={styles.dailyRecIconWrap}>
+              <NeteaseIcon size={22} />
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.heartText} onPress={openDailyRecList} activeOpacity={0.7}>
+            <Text size={15} color={theme['c-primary-font']}>{t('wy_daily_rec_card_title')}</Text>
             <Text size={11} color={theme['c-500']}>
               {dailyRecPlaying
                 ? t('wy_lib_loading')
@@ -238,9 +251,11 @@ export default () => {
                   ? `${t('setting_wy_daily_rec_synced')} · ${dailyRecCount}${t('wy_lib_tracks_unit')}`
                   : t('wy_daily_rec_card_tip')}
             </Text>
-          </View>
-          <Icon name="chevron-right" size={18} color={theme['c-primary-font']} />
-        </TouchableOpacity>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.dailyRecChevron} onPress={openDailyRecList} activeOpacity={0.7}>
+            <Icon name="chevron-right" size={18} color={theme['c-primary-font']} />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={{ ...styles.heartBanner, backgroundColor: theme['c-primary-background-hover'] }} onPress={handleHeartMode} activeOpacity={0.8}>
           <Icon name="love" size={22} color={theme['c-primary-font']} />
@@ -293,7 +308,7 @@ export default () => {
         ) : null}
       </>
     )
-  }, [account, loading, myPlaylists, recPlaylists, artists, albums, theme, t, handleHeartMode, handleLogin, handleOpenStats, handleDailyRec, dailyRecPlaying, dailyRecCount, renderPlaylistGrid, renderAlbumGrid, openArtist])
+  }, [account, loading, myPlaylists, recPlaylists, artists, albums, theme, t, handleHeartMode, handleLogin, handleOpenStats, handleDailyRecPlay, openDailyRecList, dailyRecPlaying, dailyRecCount, renderPlaylistGrid, renderAlbumGrid, openArtist])
 
   return (
     <ScrollView
@@ -325,10 +340,19 @@ const styles = createStyle({
     padding: 14,
     marginBottom: 8,
   },
+  dailyRecIconBtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dailyRecChevron: {
+    paddingLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   dailyRecIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(212, 60, 51, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
