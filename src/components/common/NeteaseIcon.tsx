@@ -1,11 +1,11 @@
 import { memo } from 'react'
-import Svg, { Circle, Path } from 'react-native-svg'
+import Svg, { Path } from 'react-native-svg'
 import { scaleSizeW } from '@/utils/pixelRatio'
 
 /**
- * 自绘的网易云风格图标：红色圆环 + 内嵌音符（一个带符尾的八分音符）。
- * 用 react-native-svg 画，独立于 IcoMoon 字体图标，避免往字体里塞字形。
- * 参数对齐 common/Icon：size 会做屏幕缩放，color 默认网易云红。
+ * 网易云图标：使用 Simple Icons 官方收录的 NetEase Cloud Music 矢量路径（CC0-1.0）。
+ * 形状与网易云 app 的 logo 一致（音符 + 外圈圆环），红色填充。
+ * 参数对齐 common/Icon：size 做屏幕缩放，color 默认网易云红。
  */
 interface NeteaseIconProps {
   size?: number
@@ -15,47 +15,14 @@ interface NeteaseIconProps {
 
 const NETEASE_RED = '#D43C33'
 
+// Simple Icons 官方 path（viewBox 0 0 24 24），音符 + 外圈圆环
+const PATH = 'M13.046 9.388a3.919 3.919 0 0 0-.66.19c-.809.312-1.447.991-1.666 1.775a2.269 2.269 0 0 0-.074.81c.048.546.333 1.05.764 1.35a1.483 1.483 0 0 0 2.01-.286c.406-.531.355-1.183.24-1.636-.098-.387-.22-.816-.345-1.249a64.76 64.76 0 0 1-.269-.954zm-.82 10.07c-3.984 0-7.224-3.24-7.224-7.223 0-.98.226-3.02 1.884-4.822A7.188 7.188 0 0 1 9.502 5.6a.792.792 0 1 1 .587 1.472 5.619 5.619 0 0 0-2.795 2.462 5.538 5.538 0 0 0-.707 2.7 5.645 5.645 0 0 0 5.638 5.638c1.844 0 3.627-.953 4.542-2.428 1.042-1.68.772-3.931-.627-5.238a3.299 3.299 0 0 0-1.437-.777c.172.589.334 1.18.494 1.772.284 1.12.1 2.181-.519 2.989-.39.51-.956.888-1.592 1.064a3.038 3.038 0 0 1-2.58-.44 3.45 3.45 0 0 1-1.44-2.514c-.04-.467.002-.93.128-1.376.35-1.256 1.356-2.339 2.622-2.826a5.5 5.5 0 0 1 .823-.246l-.134-.505c-.37-1.371.25-2.579 1.547-3.007.329-.109.68-.145 1.025-.105.792.09 1.476.592 1.709 1.023.258.507-.096 1.153-.706 1.153a.788.788 0 0 1-.54-.213c-.088-.08-.163-.174-.259-.247a.825.825 0 0 0-.632-.166.807.807 0 0 0-.634.551c-.056.191-.031.406.02.595.07.256.159.597.217.82 1.11.098 2.162.54 2.97 1.296 1.974 1.844 2.35 4.886.892 7.233-1.197 1.93-3.509 3.177-5.889 3.177zM0 12c0 6.627 5.373 12 12 12s12-5.373 12-12S18.627 0 12 0 0 5.373 0 12Z'
+
 export const NeteaseIcon = memo(({ size = 24, rawSize, color = NETEASE_RED }: NeteaseIconProps) => {
   const s = rawSize ?? scaleSizeW(size)
-  // 圆环线宽取尺寸的 ~11%，比之前细一点更精致
-  const strokeWidth = Math.max(1.6, s * 0.11)
-  const radius = s * 0.5 - strokeWidth / 2
-  const cx = s / 2
-  const cy = s / 2
-
-  // 音符几何（在 viewBox 内以 s 为基准，居中偏右一点让视觉平衡）
-  const noteCx = cx + s * 0.06
-  const headRy = s * 0.11 // 符头椭圆半径
-  const headRx = headRy * 1.25
-  const headY = cy + s * 0.16 // 符头中心
-  const flagTopY = cy - s * 0.20 // 符杆顶端
-  const flagEndX = noteCx + s * 0.14
-  const flagEndY = cy - s * 0.02 // 符尾末端
-
   return (
-    <Svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
-      <Circle cx={cx} cy={cy} r={radius} stroke={color} strokeWidth={strokeWidth} fill="none" />
-      {/* 符杆：从符头顶端向上，略向右倾 */}
-      <Path
-        d={`M ${noteCx - headRx} ${headY} L ${noteCx + headRx * 0.55} ${flagTopY}`}
-        stroke={color}
-        strokeWidth={strokeWidth * 0.75}
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* 符尾：从符杆顶端向右下弯 */}
-      <Path
-        d={`M ${noteCx + headRx * 0.55} ${flagTopY} Q ${flagEndX} ${flagTopY + s * 0.08} ${flagEndX} ${flagEndY}`}
-        stroke={color}
-        strokeWidth={strokeWidth * 0.75}
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* 符头：实心椭圆，向右下略倾 */}
-      <Path
-        d={`M ${noteCx - headRx} ${headY} a ${headRx} ${headRy} 0 1 0 ${headRx * 2} 0 a ${headRx} ${headRy} 0 1 0 ${-headRx * 2} 0`}
-        fill={color}
-      />
+    <Svg width={s} height={s} viewBox="0 0 24 24">
+      <Path d={PATH} fill={color} />
     </Svg>
   )
 })
